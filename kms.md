@@ -431,3 +431,26 @@ Advantage of using SSE-KMS:
 - To decrypt any object, you need access to the CMK that was used to generate the unique key that was used to generate them.
 - The CMK is used to decrypt the data encryption key for that object. That decrypted data encryption key is used to decrypt the object itself.
 - The best benefit is the role seperation. If you don't have access to KMS, you don't have access to the object.
+
+---
+
+## Enabling Amazon S3 default bucket encryption
+
+You can set the default encryption behavior on an Amazon S3 bucket so that `all objects are encrypted` when they are stored in the bucket. The objects can be encrypted using server-side encryption with
+
+- either Amazon S3-managed keys (SSE-S3)
+- or AWS Key Management Service (AWS KMS) keys.
+
+After you enable default encryption for a bucket, there is no change to the encryption of the objects that existed in the bucket before default encryption was enabled.
+
+Any new file uploaded without any encryption specified will use the default bucket encryption.
+
+When you upload objects after enabling default encryption:
+
+- If your PUT request headers don't include encryption information, Amazon S3 uses the bucket’s default encryption settings to encrypt the objects.
+
+- If your PUT request headers include encryption information, Amazon S3 uses the encryption information from the PUT request to encrypt objects before storing them in Amazon S3.
+
+---
+
+Reference: Keys usage demo (https://learn.cantrill.io/courses/1101194/lectures/25997332)
