@@ -20,6 +20,90 @@ KMS provides `FIPS 140-2 (L2)` complaint service.
 
 - Some features are level 3 complaint as well
 
+Update:
+
+- Keys can now be replicated into other regions.
+
+---
+
+## Create Key
+
+- key name
+- key alias
+- adminstrative permissions (choose who can administor this key)
+- key usage permissions (choose who can use this key)
+
+```json
+{
+  "Id": "key-consolepolicy-3",
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "Enable IAM User Permissions",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::111122223333:root"
+      },
+      "Action": "kms:*",
+      "Resource": "*"
+    },
+    {
+      "Sid": "Allow access for Key Administrators",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::111122223333:user/jack"
+      },
+      "Action": [
+        "kms:Create*",
+        "kms:Describe*",
+        "kms:Enable*",
+        "kms:List*",
+        "kms:Put*",
+        "kms:Update*",
+        "kms:Revoke*",
+        "kms:Disable*",
+        "kms:Get*",
+        "kms:Delete*",
+        "kms:TagResource",
+        "kms:UntagResource",
+        "kms:ScheduleKeyDeletion",
+        "kms:CancelKeyDeletion"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "Allow use of the key",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::111122223333:user/jack"
+      },
+      "Action": [
+        "kms:Encrypt",
+        "kms:Decrypt",
+        "kms:ReEncrypt*",
+        "kms:GenerateDataKey*",
+        "kms:DescribeKey"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "Allow attachment of persistent resources",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::111122223333:user/jack"
+      },
+      "Action": ["kms:CreateGrant", "kms:ListGrants", "kms:RevokeGrant"],
+      "Resource": "*",
+      "Condition": {
+        "Bool": {
+          "kms:GrantIsForAWSResource": "true"
+        }
+      }
+    }
+  ]
+}
+```
+
 ---
 
 ## Customer Master Keys (CMK)
@@ -56,8 +140,11 @@ This physical key material can be used to encrypt or decrypt data thats upto `4K
   - During the key rotation the physical key material used for encryption is changed.
 - AWS managed keys are always rotated. This feature can't be disabled for AWS managed keys.
   - Keys are rotated every 1095 days(3 years)
+  - When we start using encyprt with KMS for different services, AWS managed keys are created
 - Customer Managed Keys support rotation.
+  - Disabled by default
   - Keys are rotated once a year
+  - Once enabled, this cannot be disabled
 
 ### Aliases
 
@@ -194,3 +281,153 @@ These kinds of policy can be used to create groups of users. Say, you create gro
 
 - who can create and manage the keys but not use them
 - users who can only use the keys
+
+---
+
+## Using CMK to encrypt and decrypt data via CLI
+
+```sh
+echo "find all the doggos, distract them with the yumz" > battleplans.txt
+
+aws kms encrypt \
+    --key-id alias/catrobot \
+    --plaintext fileb://battleplans.txt \
+    --output text \
+    --query CiphertextBlob \
+    | base64 --decode > not_battleplans.enc
+
+aws kms decrypt \
+    --ciphertext-blob fileb://not_battleplans.enc \
+    --output text \
+    --query Plaintext | base64 --decode > decryptedplans.txt
+```
+
+---
+
+# Object Encryption
+
+Buckets aren't encrypted, **objects are**. Each object can use a different encryption method.
+
+## Types of S3 Encryption
+
+- Client Side Encryption
+  - Objects are encrypted before they are sent to S3.
+  - Client decides the keys to be used, process to be followed for the encryption
+  - Doesnt use S3 for any part of the encryption. Just stores the encrypted objects post encryption on client side.
+- Server Side Encryption
+  - The objects arent initially encrypted, only when data is sent to S3 it is encrypted via HTTPS (encryption in transit)
+  - When the data hits the S3 endpoint, the object are encrypted.
+
+```
+
+User or App     ---      S3 Endpoint     ---     S3 Storage
+
+```
+
+Both of these refer to encryption at rest.
+
+Both of these use encryption in transit for S3. This comes standard with S3.
+
+---
+
+## Server Side Encryption
+
+Involves:
+
+- Encryption of the objects
+- Management of keys
+
+### SSE-C (Server-side encryption with customer provided keys)
+
+- Customer is responsible for the keys management.
+- S3 endpoint performs the encryption of objects.
+- Customer needs to pass the key along with the object(unencrypted) to be encrypted to S3 endpoint.
+
+Hash of the key:
+
+- Once the key and object arrive, it is encrypted. A hash of the key is taken and attached to the object.
+- The hash can identify if the specific key was used to encrypt the object.
+- The key is then discarded after the hash is taken.
+
+Post encryption:
+
+- The key is discarded and is not stored along with the object in S3.
+
+For decryption:
+
+- You need to specify the object to be decrypyted with the key that was used to encrypt the object.
+- If the has of the key specified in the request matches with the hash attached to the requested object, S3 returns the unencrypted object and discards the key.
+
+### SSE-S3 AES256 (Server-side encryption using S3 managed keys)
+
+```
+
+User or App     ---      S3 Endpoint     ---     S3 Storage
+                              |
+                              |
+                              |
+                              |
+                    Master Key (Handled by S3)
+
+```
+
+- S3 is responsible for the keys management.
+- S3 generates master key, when you pick SSE-S3 for the first time. This master key is fully managed and rotated by S3.
+
+For encryption:
+
+- You just provide the object to be encrypted to S3 endpoint.
+- When an object is added, it generates a key specifically for that object. It uses that key to encrypt the given object.
+- The master key is used to encrypt that key used.
+
+Post encryption:
+
+- The original key is discarded.
+- The encrypted key and the encrypted object are stored in S3 post this process.
+
+Challenges with using SSE-S3
+
+- Regulatory enviromment where the keys and access needs to be controlled.
+- No way to control key material rotation.
+- No role seperation. A full S3 admin can rotate keys as well as encrypt or decrypt data. (In some domains, these is against the company policy. A clear role seperation on who can manage the keys and who can use the keys needs to be maintained)
+
+### SSE-KMS (Server-side encryption using customer master keys stored in AWS KMS)
+
+```
+
+User or App     ---      S3 Endpoint     ---     S3 Storage
+                              |
+                              |
+                              |
+                              |
+                  Customer Master Key (In KMS)
+
+
+```
+
+- S3 generates a customer master key, when you pick SSE-KMS for the first time.
+- Allows control over key rotation
+
+For encryption:
+
+- Everytime an object is uploaded, S3 uses a dedicated key to encrypt the given object.
+- This key is called Data Encryption Key and is generated using the Customer Master Key.
+- S3 endpoint is passed the given object by the request. KMS provides plain text and encrypted Data Encryption Key to be used to encrypt this object.
+
+Post encryption:
+
+- The plain text data encryption key is discarded.
+- The encrypted data encryption key and the encrypted object are stored in S3 post this process.
+
+Data Encryption Key based architecture
+
+- Data Encryption Key is used to encrypt data more than 4KB
+- SSE-KMS is one of the service that uses the Data Encryption Key based architecture
+
+You can also use a customer managed key as well instead of the customer master key from KMS.
+
+Advantage of using SSE-KMS:
+
+- To decrypt any object, you need access to the CMK that was used to generate the unique key that was used to generate them.
+- The CMK is used to decrypt the data encryption key for that object. That decrypted data encryption key is used to decrypt the object itself.
+- The best benefit is the role seperation. If you don't have access to KMS, you don't have access to the object.
