@@ -1,3 +1,4 @@
 - [IAM Fundamentals](./iam.md)
 - [Simple Storage Service (S3)](./s3.md)
 - [Key Management Service (KMS)](./kms.md)
+- [Policy Interpretation](./policy-interpretation.md)
