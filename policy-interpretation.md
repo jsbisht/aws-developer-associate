@@ -124,3 +124,37 @@ Statement 2:
 Statement 3:
 
 - Allows all the operations on the S3 bucket `cl-animals4life` folder that are inside the current username folder under home folder and any object within the username folder.
+
+# Permission Evaluation
+
+## Evaluation Flow
+
+When evaluating effective policy permission you have to consider:
+
+- Any AWS Organisation Service Control Policy (SCP)
+  - These impact what identities inside the AWS account can do
+- Resource Policies
+  - There can be policies on the resource being accessed
+- IAM Identity Boundries
+  - Identities themselves may have boundries
+  - So even though Identity Policy may allow certain actions, the Identity boundries may not allow the same.
+- Session Policies
+  - If you are accessing a resource using an IAM role or you might be accessing a resource using a session which is the subset of what that role allows, then these policies will also be considered.
+- Identity Policies
+
+![permission-evaluation-flow](imgs/permission-evaluation-flow.png)
+
+**NOTE**: If given action on the resource is allowed by resouce policy the flow stops.
+
+- And any explicit deny will stop the processing as well.
+- Only when a certain policy is missing the flow continues.
+
+## Cross Account
+
+When access is made from Account A to another Account B containing the resource to be accessed:
+
+- If **Account A allows access to resource in Account B** and **Account B allows access to resorce from Account A**, the permission is granted.
+- If **Account A allows access to resource in Account B** and **Account B denies access to resource from Account A**, the permission is denied.
+- If **Account A denies access to resource from Account B** and **Account B allows access to resource in Account A**, the permission is denied.
+
+![permission-evaluation-cross-account](imgs/permission-evaluation-cross-account.png)
