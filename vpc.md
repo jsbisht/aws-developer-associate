@@ -13,6 +13,20 @@ VPC Subnet is a subnetwork of a VPC within a particular AZ
 - One subnet cannot overlap with other subnet
 - By default subnet within a VPC can communicate with other subnets in the same VPC
 
+A VPC spans multiple AZ.
+
+- 1 VPC can contain multiple AZ.
+- 1 AZ can contain multiple subnets.
+
+---
+
+## Default VPC
+
+- Regions can only have 1 default VPC and many custom VPCs
+- Custom VPCs allow flexible network configuration, the default VPC has a fixed scheme
+- Some services can behave oddly if the default VPC doesn't exist
+- Default VPCs can be recreated
+
 ---
 
 ## Subnet IP Addressing
@@ -31,9 +45,9 @@ There is no charge for VPC's and Subnets creation???
 
 ---
 
-## How network prefix is sliced
+## How network CIDR is sliced
 
-Every time you change the prefix by 1, say from 16 to 17, you create two network.
+Every time we slice the CIDR by 1, say `/16`, we create two `/17` network.
 
 ```
 
@@ -58,13 +72,13 @@ Every time you change the prefix by 1, say from 16 to 17, you create two network
 /19 - /20 /20
 ```
 
-So, slicing `/16` network into 16 subnets gives us 16 networks with `/20` prefix.
+So, slicing `/16` network into 16 subnets gives us 16 networks with `/20` CIDR.
 
 ---
 
 ## Designing a VPC
 
-Consider the following scenario where business has 3 networks already in use:
+Consider the following scenario where business has following networks:
 
 - AWS Pilot (10.0.0.0/16) `10.0.0.0 -> 10.0.255.255`
 - Azure Pilot (172.31.0.0/16) `172.31.0.0 -> 172.31.255.255`
@@ -74,7 +88,7 @@ Consider the following scenario where business has 3 networks already in use:
 - Seattle (192.168.25.0/24) `192.168.25.0 -> 192.168.25.255`
 - Google Cloud (10.128.0.0/9) `10.128.0.0 -> 10.255.255.255`
 
-Based on the prefix to get the new network range, add the related from the following:
+Based on the CIDR to get the new network range, add the related from the following:
 
 ```
 9: x.128.255.255
@@ -94,7 +108,7 @@ So, 40 ranges in total ideally.
 
 ![vpc sizing table](./imgs/vpc-sizing-table.png)
 
-Important questions you should be answering before creating subnets is:
+Important questions we should be answering before creating subnets is:
 
 - How many subnets will we need
 - How many IPs we need in total
@@ -102,7 +116,7 @@ Important questions you should be answering before creating subnets is:
 
 A subnet is located in one availability zone.
 
-- How many AZ your VPC will use
+- How many AZ our VPC will use
 
 ### VPC Structure
 
@@ -112,7 +126,7 @@ Also, for each tier of the stack we create a subnet. So, considering current 3 t
 
 In total thats 16 subnets, which will be obtained by splitting `/16` network into 16 `/20` subnets. _(256 x 16 = 4096 IPs, Actual available IPs are 4096 - 5 = 4091 IPs)_
 
-- If you had started from prefix `/17` instead you would get 16 subnets of `/21` subnets
+- If we had started from prefix `/17` instead we would get 16 subnets of `/21` subnets
 
 ![vpc structure](./imgs/vpc-structure.png)
 
@@ -124,7 +138,7 @@ Provided by Route 53
 
 Available on the base IP address of the VPC + 2. If the VPC is 10.0.0.0 then the DNS IP will be 10.0.0.2
 
-Two important settings which should be checked in case of issues. (These are found in the actions area of a VPC)
+Two important settings which should be checked in case of issues. (These are found in the actions panel of a VPC in console)
 
 - enableDnsHostnames
   - Indicates whether instances with public IP addresses in a VPC are given public DNS hostnames.- If this is set to true, instances will get get public DNS hostnames.
@@ -135,7 +149,7 @@ Two important settings which should be checked in case of issues. (These are fou
 
 ### IPv6 CIDRs
 
-- You dont choose the subnet blocks as you do with IPv4. This is automatically allotted by AWS.
+- We dont choose the subnet blocks as we do with IPv4. This is automatically allotted by AWS.
 - CIDRs are of `/56`.
 
 ---
@@ -148,9 +162,11 @@ Two important settings which should be checked in case of issues. (These are fou
 - Highly available device available in every VPC.
 - Router has a network address `network + 1` in every subnet in the VPC.
 - Routes traffic between subnets.
-- Route table associated with the subnet defines what the Router will do with traffic when data leaves that subnet.
-- A VPC is created with a main route table. If you don't associate a custom route table with a subnet, it uses the **`main route table`** of the VPC.
-- If you do associate a **`custom route table`** you create with a subnet, then the main route table is disassociated. `A subnet can only have one route table associated at a time`, but one route table can be associated by many subnets.
+- `Route table` associated with the subnet defines what the Router will do with traffic when data leaves that subnet.
+- All the subnets when created are associated with a `main route table`. If we don't associate a `custom route table` with a subnet, it uses the `main route table` of the VPC.
+- If we do associate a `custom route table` we create with a subnet, then the main route table is disassociated.
+- `A subnet can only have one route table associated at a time`.
+- But one route table can be associated by many subnets.
 
 ### Route Tables
 
@@ -163,13 +179,19 @@ Two important settings which should be checked in case of issues. (These are fou
 - All route table has at least one route, the local route. This matches the VPC CIDR range and lets the VPC know that the traffic originating in that range is local.
 - Can have a IPv6 route destination defined as well.
 
+| Route Tables  |        |
+| ------------- | ------ |
+| Destination   | Target |
+| 172.31.0.0/16 | Local  |
+| 172.31.0.0/20 | eni-id |
+
 ### Internet Gateway
 
 - Regional resilient gateway attached to a VPC.
 - DO NOT NEED one per AZ.
 - `One IGW will cover all AZ's in a region`
 - An IGW can be created and can exist without VPC
-- It can only be attached to one VPC at a time.
+- `It can only be attached to one VPC at a time`.
 - An IGW exists between VPC and AWS public zone
 - It is what allows gateway traffic between the VPC and the internet or AWS Public Zones (S3, SQS, SNS, etc.)
 - It is a managed gateway and AWS handles the performance.
@@ -198,16 +220,15 @@ In this example, an EC2 instance has:
 - Private IP address of 10.16.16.20
 - Public address of 43.250.192.20
 
-The public address is not public and attached to the EC2 instance itself.
+The `IGW creates a record that links the instance's private IP to the public IP`.
 
-Instead, the `IGW creates a record that links the instance's private IP to the public IP`. This is why when an EC2 instance is created it only sees the private IP address. This is IMPORTANT.
-
+- This is why when an EC2 instance is created it `only sees the private IP address`.
 - For IPv4 it is not configured in the OS with the public address.
 
 #### Sending packet to internet
 
 - So when a packet leaves the EC2 instance, it has a source's private IP address.
-- This packet when received by IGW, it knows that the packet is from an EC2 instance which has a public IP address.
+- This packet when received by IGW, it knows that the packet is from an EC2 instance which has a public IP address, based on the record linking private and public IP IGW has stored.
 - So IGW updates the source IP address to that of the public IP address mapped earlier.
 - Now the packet has a public IP address and becomes routable across internet.
 
@@ -224,13 +245,13 @@ It is an instance in a public subnet in a VPC.
 
 These are used to allow incoming management connections.
 
-Once connected, you can then go on to access internal only VPC resources.
+Once connected, we can then go on to access internal only VPC resources.
 
 Used as a management point or as an entry point at a private VPC.
 
 This is an inbound management point. Can be configured to only allow
 specific IP addresses or to authenticate with SSH. It can also integrate
-with your on premise identification service.
+with our on premise identification service.
 
 ---
 
@@ -249,15 +270,15 @@ A VPC has a configuration object called DHCP Option Set applied to it. This is u
 - One DHCP Option Set applies to VPC at one time
 - This configuration is then passed on to the subnets
 
-For every subnet you can define IP allocation option
+For every subnet we can define IP allocation option
 
 - Auto assign public IPv4 IP in addition to private IP
 - Auto assing IPv6 IP
 
-You can use https://www.site24x7.com/tools/ipv4-subnetcalculator.html for subnet range calculations.
+We can use https://www.site24x7.com/tools/ipv4-subnetcalculator.html for subnet range calculations.
 
-- Using the AWS console, you can create all the subnets within a single AZ together
-- And you can also create the all the subnets for other AZ's as well
+- Using the AWS console, we can create all the subnets within a single AZ together
+- And we can also create the all the subnets for other AZ's as well
 
 Post subnet creation we will have the following
 
@@ -274,7 +295,7 @@ We will configure web tier to be public subnets, to make all the subnets be conn
   - Initally Route Table will not be having any `subnet associations`.
   - We will then add the associations to all the web tier subnets.
   - Before the association each subnet will be associated with the `Main` as their current route table.
-  - Post association each web tier subnet will be associated with this route table.
+  - Post association each web tier subnet will be associated with this custom route table.
 - Route table content will be as follows:
   - Intially two `local routes`, one for IPv4 and one for IPv6 addresses will be present based on the CIDR of the subnet. These cannot be adjusted or removed.
   - We will add another route to set `default route` for IPv4 and IPv6 `0.0.0.0/0 & ::/0` addresses. This any route not belonging to the VPC, `will be forwarded to the IGW`.
@@ -294,7 +315,7 @@ Stateful firewalls for this reason, makes setting firewall easy as the response 
 
 ---
 
-## Network Access Control List (NACL)
+# Network Access Control List (NACL)
 
 Network Access Control Lists (NACLs) are a type of security filter (like firewalls) which can filter traffic as it enters or leaves a subnet.
 
@@ -317,14 +338,14 @@ Relationship between NACL and subnet is one to many.
 - Each subnet can have one NACL (Default or Custom).
 - Each NACL can be associated with multiple subnets.
 
-### NACL content
+## NACL content
 
 Each NACL contains two sets of rules
 
 - inbound rules (matches traffic ENTERING the subnet)
 - outbound rules (matches traffic LEAVING the subnet)
 
-### NACL rules
+## NACL rules
 
 NACL rules match:
 
@@ -341,7 +362,7 @@ NACL rules are processsed:
 - once match occurs rules matching stops
 - `*` is an implicit DENY if nothing else matches
 
-### NACLs are stateless
+## NACLs are stateless
 
 NACLs are stateless. And they treat request and response as different.
 
@@ -349,7 +370,7 @@ NACLs are stateless. And they treat request and response as different.
 - 1 INBOUND rule needs to be defined
 - 1 OUTBOUND rule needs to be defined
 
-### Scenario
+## Scenario
 
 Consider a user making a request to the website hosted by a web tier in our VPC.
 
@@ -374,7 +395,9 @@ If we are using NACLs we will need one for the INBOUND and the OUTBOUND
 
 Rule (number) between INBOUND and OUTBOUND tables are not affected by each other.
 
-### Default NACL
+**NOTE**: If DENY rule matches first, then ALLOW rule will never get processsed
+
+## Default NACL
 
 When a VPC is created its created with a default NACL.
 
@@ -392,9 +415,7 @@ Here is an example of default NACL that is added for a VPC. The following result
 | 100      | All IPv4 traffic | All      | All        | 0.0.0.0/0 | ALLOW      |
 | \*       | All IPv4 traffic | All      | All        | 0.0.0.0/0 | DENY       |
 
-**NOTE**: If DENY rule matches first, then ALLOW rule will never get processsed
-
-### Custom NACL
+## Custom NACL
 
 When a custom NACL is created they have only 1 INBOUND rule with implicit `*` DENY and 1 OUTBOUND rule with implicit `*` DENY.
 
@@ -412,7 +433,7 @@ We need to add rules to ALLOW traffic as per need.
 
 ---
 
-## VPC Security Groups
+# VPC Security Groups
 
 Security Groups (SGs) are another security feature of AWS VPC ... only unlike NACLs they are attached to AWS resources, not VPC subnets.
 
@@ -420,23 +441,23 @@ SGs offer a few advantages vs NACLs in that they can recognize AWS resources and
 
 But.. SGs are not capable of explicitly blocking traffic - so often require assistance from NACLs
 
-### Consideration
+## Consideration
 
 - Security groups are stateful and `detect response traffic automatically`.
-- If you allow INBOUND or OUTBOUND request, the response is automatically allowed.
+- If we allow INBOUND or OUTBOUND request, the response is automatically allowed.
 
-If you explicitly doesnt ALLOW traffic, you are implicitly DENY'ing it.
+If we explicitly doesnt ALLOW traffic, we are implicitly DENY'ing it.
 
 No explicit DENY is allowed.
 
-- So you cant block specific bad IPs or networks
-- For this you use NACL to add explicit DENY
+- So we cant block specific bad IPs or networks
+- For this we use NACL to add explicit DENY
 
 Security Groups are attached to primary Elastic Network Interfaces (ENIs), not to EC2 instances
 
-### Scenario
+## Scenario
 
-Consider an public subnet containing an EC2 instance for the Web Tier having an attached primary Elatic Network Interface. User is accessing the instance using HTTPS (TCP/443).
+Consider an public subnet containing an EC2 instance for the Web Tier having an attached primary Elastic Network Interface. User is accessing the instance using HTTPS (TCP/443).
 
 Note that a security group conceptually surrounds an Elastic Network Interface.
 
@@ -447,9 +468,9 @@ A typical security group might have an INBOUND and OUTBOUND rules.
 | Type    | Protocol | Port Range | Source    | Description   |
 | HTTPS   | TCP      | 443        | 0.0.0.0/0 | inbound HTTPS |
 
-The about security group applies to the request from port 443 through HTTPS. Since SGs are stateful the corresponding reponse is automatically allowed.
+The above security group applies to the request from port 443 through HTTPS. Since SGs are stateful the corresponding reponse is automatically allowed.
 
-### Logical References
+## Logical References
 
 In the above scenario the Web Tier EC2 instance might be connecting to the App Tier EC2 instance.
 
@@ -457,7 +478,7 @@ In the above scenario the Web Tier EC2 instance might be connecting to the App T
 - And if we want our application to scale we could add the CIDR range of the subnet
 - But instead we will reference the Web Tier's Security Group within the App Tier's Security Group
 
-Web Tier's Security Group might look as follows (Is this correct???).
+Web Tier's Security Group might look as follows [Is this correct???].
 
 | INBOUND    |          |            |                         |                      |
 | ---------- | -------- | ---------- | ----------------------- | -------------------- |
@@ -473,7 +494,7 @@ App Tier's Security Group might look as follows.
 
 Logical referencing scales. So any instances having SG `sg-0123acbd4567/a4l-web` attached to them will be able to connect to any instance having SG `sg-45670123acbd/a4l-app` attached to them using port 1337.
 
-### Self References
+## Self References
 
 Logical references allows self references.
 
@@ -489,7 +510,7 @@ This allows incoming connections on port 1337 from Web Tier SG.
 
 This also has a self reference'ing rule which allows allows all traffic i.e.
 
-- So any instancing having this SG can receive traffic from other instances sharing the same SG
+- So any instances having `sg-45670123acbd/a4l-app` SG can receive traffic from other instances sharing the same SG
 - This handles IP changes automatically, which is really useful when instances are terminating with auto scaling group.
 
 ---
@@ -545,24 +566,24 @@ Consider a packet from instance `i-01` being sent with a destination ip `1.3.3.7
 
 ## Considerations
 
-If you need to give a private instance its own public IPv4 address
+If we need to give a private instance its own public IPv4 address
 
 - then only Internet Gateway is required.
 
-If you want to give private instances access to AWS Public Zone services (such as S3) and Public Internet
+If we want to give private instances access to AWS Public Zone services (such as S3) and Public Internet
 
-- then you need both NAT Gateway (to do many to one translation) and Internet Gateway (translates IP of NAT Gateway to real public IP)
+- then we need both NAT Gateway (to do many to one translation) and Internet Gateway (translates IP of NAT Gateway to real public IP)
 
 NAT Gateway:
 
 - needs to run from a public subnet
-- Uses Elatic IPs (Static IPv4 Public)
+- Uses Elastic IPs (Static IPv4 Public)
 - Managed service, scales up to 45 Gbps. Can deploy multiple NATGW to increase bandwidth.
 
 Resilience:
 
 - AZ resilient service (Resilient in that AZ and can recover from hardware failure)
-- For a fully region resillient service, you must deploy `one NAT Gateway in each AZ`
+- For a fully region resillient service, we must deploy `one NAT Gateway in each AZ`
 - Route Table in each AZ with NAT Gateway as target
 
 IPv6
@@ -600,7 +621,7 @@ Using the earlier setup tier architecture for multi-AZ as the base
 We create a EC2 instance in the public subnet (Web Tier) and EC2 instance within private subnet (App Tier).
 
 - We create the NAT Gateway for each AZ linking it to the public subnet (Web Tier) during the creation
-  - Also, allocate elatic IP to the NAT Gateway
+  - Also, allocate elastic IP to the NAT Gateway
 - We create the Route Table for each AZ linking them to the VPC
   - Edit each route and link them to NAT Gateway
   - Use **destination** as `0.0.0.0/0` and pick the appropriate NAT gateway as **target**
