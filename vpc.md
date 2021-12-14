@@ -535,7 +535,7 @@ The private instances can also have a route table, which can be different from t
 
 Consider a packet from instance `i-01` being sent with a destination ip `1.3.3.7`
 
-- the packet is sent to NAT gateway because of the default route in the route table of the App Tier's subnet
+- the packet is sent to NAT gateway because of the default route in the `private route table` of the App Tier's subnet
 - NAT gateway records the packet details (source ip, destination ip, etc) to help it identify the packet related communication in future
 - All the information is maintained by NAT Gateway into a `translation table`.
 - Post this, NAT Gateway updates the packet's source as the public IP of the NAT Gateway and the destination as `1.3.3.7`.
@@ -562,5 +562,51 @@ NAT Gateway:
 Resilience:
 
 - AZ resilient service (Resilient in that AZ and can recover from hardware failure)
-- For a fully region resillient service, you must deploy one NAT Gateway in each AZ
+- For a fully region resillient service, you must deploy `one NAT Gateway in each AZ`
 - Route Table in each AZ with NAT Gateway as target
+
+IPv6
+
+- NAT Gateway isnt required for IPv6
+- NAT Gateway doesnt work with IPv6
+- All IPv6 addresses in AWS are publicly routable
+- Any instance with IPv6 address can directly communicate with AWS Public Zone or Internet Gateway
+- `::/0` route with Internet Gateway will give the instance INBOUND and OUTBOUND connectivity `subject to NACL or Security Groups`
+- `::/0` route with Egress-Only Internet Gateway will give the instance OUTBOUND only connectivity `subject to NACL or Security Groups`
+
+**NOTE**: NAT Gateway only use NACL and dont use Security Group
+
+## NAT Gateway vs NAT Instance
+
+NAT Instance is deployed on an EC2 instance
+
+- Its limited by the resources that are allocated to the EC2
+- If this fails it wont automatically recover like NAT Gateway which are highly available
+- NAT instances which are limited by the bandwidth of the instance type, dont perform as well as NAT Gateway which offers 45 Gbps bandwidth
+- NAT Instance is a cost effective alternative to NAT Gateway
+
+## Demo - VPC, NAT, Route Table and SSH
+
+### SSH and SSH Agent Forwarding
+
+This demo shows how to ssh into the public EC2 instance and then ssh into the private EC2 instance using agent forwarding
+
+https://learn.cantrill.io/courses/1101194/lectures/26982643
+
+### VPC, NAT, Route Table
+
+Using the earlier setup tier architecture for multi-AZ as the base
+
+We create a EC2 instance in the public subnet (Web Tier) and EC2 instance within private subnet (App Tier).
+
+- We create the NAT Gateway for each AZ linking it to the public subnet (Web Tier) during the creation
+  - Also, allocate elatic IP to the NAT Gateway
+- We create the Route Table for each AZ linking them to the VPC
+  - Edit each route and link them to NAT Gateway
+  - Use **destination** as `0.0.0.0/0` and pick the appropriate NAT gateway as **target**
+
+At this state the subnets are not yet associated with the newly created route tables. So, they will be associated with the main route table.
+
+- We update each route table to add association with all the private subnet
+
+Once done, the SSH from EC2 instance within private subnet will be able to ping to the internet IP address.

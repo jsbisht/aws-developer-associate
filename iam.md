@@ -10,9 +10,9 @@ There are three ways IAM authenticates a principal:
 
 IAM allows you to create a password policy enforcing password complexity and expiration.
 
-An Access Key is a combination of an access key ID (20 characters) and an access secret key (40 characters).
+An Access Key is a combination of an access key ID `(20 characters)` and an access secret key `(40 characters)`.
 
-When a process operates under an assumed role, the temporary security token provides an access key for authentication. In addition to the access key, the token also includes a session token.
+When a process operates under an assumed role, the `temporary security token` provides an access key for authentication. In addition to the access key, _the token also includes a session token_.
 
 ---
 
@@ -20,28 +20,8 @@ When a process operates under an assumed role, the temporary security token prov
 
 Authorization is controlled by IAM polices:
 
-- Customer Managed
-- AWS Managed
-
----
-
-## Best Policy
-
-- Lock away your AWS account root user access keys
-- Use roles to delegate permissions
-- Grant least privilege
-- Use permissions with AWS managed policies
-- Validate your policies
-- Use customer managed policies instead of inline policies
-- Use access levels to review IAM permissions
-- Configure a strong password policy for your users
-- Enable MFA
-- Use roles for applications that run on Amazon EC2 instances
-- Do not share access keys
-- Rotate credentials regularly
-- Remove unnecessary credentials
-- Use policy conditions for extra security
-- Monitor activity in your AWS account
+- Customer Managed Policy
+- AWS Managed Policy
 
 ---
 
@@ -49,7 +29,7 @@ Authorization is controlled by IAM polices:
 
 An IAM user has no permission when its freshly created.
 
-- Hard Limit of 5000 users per account
+- Hard Limit of `5000 users` per account
 - Overcome this using Identity federation
 
 ---
@@ -58,7 +38,7 @@ An IAM user has no permission when its freshly created.
 
 We cant login to an IAM Group.
 
-- Hard Limit of 500 groups per account
+- Hard Limit of `500 groups` per account
 - Groups are not true identity
 - Can be referenced as a principal in a policy.
 
@@ -68,11 +48,13 @@ We cant login to an IAM Group.
 
 Unlike an IAM User which is supposed to be used by a single principal, an IAM Role is supposed to be used by many or an unknown number of principles(humans, applications or services) inside or outside your AWS account.
 
+Why cant you use group instead?
+
 With a role we borrow the permission for a short period of time.
 
 Whats the difference between logging into an IAM User vs using an IAM Role?
 
-- IAM Users can have identity, permission and policy attached to them. This is either via inline JSON or attached managed policy. These are called permissions policy.
+- IAM Users can have identity, permission and policy attached to them. This is either via inline JSON or attached managed policy. These are called `Permissions Policy`.
 
 - IAM Roles can have two types of policy attached:
   - Trust Policy
@@ -89,6 +71,8 @@ A trust policy can reference different things:
 - Can even allow anonymous usage of that account
 - Can refer types of identity such as facebook, twitter, etc
 
+[include example/sample here]
+
 ### Temporary Security Credentials
 
 If role gets assumed by something that is allowed to assume it, then AWS creates Temporary Security Credentials.
@@ -97,9 +81,11 @@ If role gets assumed by something that is allowed to assume it, then AWS creates
 - Similar to access keys but have an expiry.
 - On expiry, the identity will have to re-assume that role and then new credentials will be issued.
 
+**NOTE**: When a process operates under an assumed role, the `temporary security token` provides an access key for authentication. In addition to the access key, _the token also includes a session token_.
+
 ### Permission Policy
 
-AWS resouces that are specified within the Permission Policy are allowed to be accessed using the Temporary Security Credentials.
+AWS Resouces that are specified within the Permission Policy are allowed to be accessed using the Temporary Security Credentials.
 
 - Every time the Temporary Security Credentials are used, the access is checked against the Permission Policy.
 - Any change in permission policy implies a change in access allowed using the Temporary Security Credentials.
@@ -197,7 +183,7 @@ So, ideally in this case you would make the external identity assume a role whic
 
 Say, your project that uses an AWS account relies on a Partner AWS account to retrieve the computations they have performed whose results are stored in an S3 bucket in their account. Your account has 1000's of identities. And the partner AWS account doesn't want to create IAM users for all your users in their account.
 
-In this situation, its ideal to use a role created in the Partner AWS account. So, your users can assume that role and get temporary credentails to access the S3 bucket.
+In this situation, its ideal to use a role created in the Partner AWS account. So, your users can assume that role and get temporary credentials to access the S3 bucket.
 
 ---
 
@@ -261,20 +247,22 @@ When adding standard AWS Account, there is invite process that needs to be follo
 
 But when a AWS Account is created directly under the AWS Organisation, invite is not needed.
 
-- While adding a new account, the IAM role `OrganizationAccountAccessRole` is automatically created within the newly created account.
-- In case adding an existing account, this role needs to be created manually within that account.
+- While adding a new account, the IAM role `OrganizationAccountAccessRole` is automatically created _within_ the newly created account.
+- In case adding an existing account, this role needs to be created manually _within_ that account.
 
 ### Creating the role
 
 To create the role under the existing member acount:
 
-- Select type of trusted entity: Another AWS Account
+- Select type of trusted entity: Another AWS Account (Specifies we are gonna trust another AWS account)
 
 - Specify accounts that can use this role:
 
   - Account ID: Management Account ID
 
 - Role name: OrganizationAccountAccessRole
+
+Another AWS Account (Specifies we are gonna trust another AWS account)
 
 This role is created by making Management Account as the `Trusted Account` and its granted adminstrator priviledges.
 
@@ -286,7 +274,7 @@ When using AWS Organisation, you dont create users in every Member Account. Inst
 
 You need not keep all the users in a the Management Account. You can instead use any one AWS account to hold all the users.
 
-- You essentially login to the login account or use identity fedration.
+- You essentially login to, say, non-production AWS account or use identity fedration.
 - Once logged in, we can role switch into other accounts of the AWS Organisation.
 
 ### Switch Role
@@ -351,7 +339,7 @@ While using SCP default is DENY
 }
 ```
 
-The above two policies will deny AWS identities to access S3 under the AWS account.
+The above two policies will allow all resource access but deny AWS identities to access S3 under the AWS account.
 
 ### Inheritance
 
@@ -391,3 +379,5 @@ SCP only act as boundries
 - Permission only in SCP is allowed but not granted as its not granted by identity policy
 
 - Permission only in Identity Policy but not in SCP, is not allowed as its beyond whats allowed by SCP
+
+![permission-evaluation-flow](imgs/permission-evaluation-flow.png)
