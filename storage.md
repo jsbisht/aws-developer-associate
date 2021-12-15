@@ -36,7 +36,7 @@ Block Size \* IOPS = Throughput
 
 ---
 
-## Elastic Block Store (EBS)
+# Elastic Block Store (EBS)
 
 The OS will create a file system on top of this, NTFS or EXT3 and then it mounts it as a drive or a root volume on Linux.
 
@@ -45,14 +45,14 @@ The OS will create a file system on top of this, NTFS or EXT3 and then it mounts
 - It `can only be attached to EC2 instance in the same AZ`
 - One EC2 instance can be connected to multiple EBS volumes at once
 
-### Availability
+## Availability
 
 - Volumes are isolated to one AZ.
 - EC2 instance in one AZ cant access EBS volume of another AZ.
 - The data is highly available and resilient for that AZ.
 - All of the data is replicated within that AZ. The entire AZ must have a major fault to go down.
 
-### Snapshots
+## Snapshots
 
 - Snapshots are copied to S3
   - Across regions and
@@ -63,7 +63,7 @@ The OS will create a file system on top of this, NTFS or EXT3 and then it mounts
 - Size of snapshot is determined by the data in the volume, not the volume size.
 - Even if a single snapshot is deleted other snapshots or future snapshots will not be impacted. Each snapshot are designed to be self sufficient as in they are not impacted by what happens to other snapshots. [What if you delete the first one?]
 
-#### Restore
+### Restore
 
 - If you restore a snapshot, it does it lazily.
 - If you restore a volume, it will transfer it slowly in the background.
@@ -75,24 +75,77 @@ If you attempt to read data that hasn't been restored yet, it will pull it from 
 - You can create 50 FSR per region
 - FSR costs extra than regular restore
 
-#### Billing
+### Snapshot Billing
 
 - GB/month
 - Incremental snapshots takes less space and are billed accordingly, not as per the EBS volume size
 
-### Encryption
+---
 
-- Can be encrypted using KMS
-- If the user is having data on an encrypted volume and is trying to share it with others, he has to copy the data from the encrypted volume to a new unencrypted volume.
-
-### Pricing
+## EBS Pricing
 
 Billed based on GB/month (and performance in some cases)
 
-### Consideration
+---
+
+## Consideration
 
 - With EC2, no matter how many EBS volumes you combine using RAID0, the maximum IOPS is limited to 260,000 (io1/2/BE/gp2/3)
 - Instance store volumes can give more than 260,000 IOPS using correct instance type
+
+---
+
+## EBS Encryption
+
+Provides at rest encryption for block volumes and snapshots.
+
+When you set up an EBS volume initially, EBS uses KMS and a Master Key (CMK).
+
+- This can be the ebs default (CMK) which is refered to as `aws/ebs` or
+- It could be a customer managed CMK which you manage yourself.
+
+The CMK is used by KMS to generate an encrypted data encryption key (DEK) which is stored with the volume with on the physical disk.
+
+- This key can only be decrypted by KMS (when a role with the proper permissions makes the request)
+- Every time an EBS volume is mounted to an EC2 instance, the unencrypted DEK is stored in memory of `EC2 Host`. This is used by the `EC2 Host`, to perform encryption and decryption of data from or to the EBS volume. (Key is passed to EC2 Host not EC2 instance)
+- When the EC2 instance's host changes, the DEK on EC2 host is discarded.
+- Only the DEK in encrypted form is present on the EBS volume.
+
+### Account Wide Encryption of EBS Volumes
+
+You can enable account wide encryption of EBS Volumes using default Master Key or specify a CMK.
+
+- Any EBS volume created after this setting is enabled will be encrypted using this setting.
+- You can override the key to be used while creating a new EBS volume by choosing a different encryption key.
+
+**NOTE**: This setting has to be done for each region individually.
+
+### EBS Snapshots
+
+If a snapshot is made of an encrypted EBS volume,
+
+- It will be an encrypted snapshot always.
+- The same data encryption key is used for that snapshot.
+- Anything made from this snapshot is also encrypted in the same way.
+
+Everytime you create a new EBS volume from scratch, it creates a new data encryption key.
+
+**NOTE**: While restoring from the snapshot to a new EBS volume, you can choose a different Master Key or keep it same as the snapshot.
+
+### Considerations
+
+- AWS accounts can be set to encrypt EBS volumes by default.
+- It will use the default CMK unless a different one is chosen,
+- Each time you create the volume, you can use the default CMK or a customer managed CMK
+- Each volume uses 1 unique DEK (data encryption key)
+- Snapshots and future volume created from the snapshot use the same DEK
+- Can't change an encrypted volume to non-encrypted. You could mount an unencrypted volume and copy things over but you can't change the original volume.
+
+The OS isn't aware of the encryption, there is no performance loss. The volume is encrypted using AES256 between EC2 host and EBS volume.
+
+If we are required to use a different encryption or make the OS hold the encryption key, etc, then we need to use `full disk encryption at the OS level`.
+
+**NOTE:** If the user is having data on an encrypted volume and is trying to share it with others, he has to copy the data from the encrypted volume to a new unencrypted volume.
 
 ---
 
