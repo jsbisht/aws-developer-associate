@@ -3,3 +3,5 @@
 - [Key Management Service (KMS)](./kms.md)
 - [Policy Interpretation](./policy-interpretation.md)
 - [Virtual Private Cloud](./vpc.md)
+- [Elatic Compute Cloud](./ec2.md)
+- [Storage Fundamentals](./storage.md)
