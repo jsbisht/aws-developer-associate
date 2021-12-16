@@ -252,3 +252,221 @@ The following table shows encryption support for various AMI-copying scenarios.
 **NOTE**: You cannot copy an encrypted snapshot to yield an unencrypted one.
 
 ---
+
+# EC2 Purchase Options
+
+- On-Demand Instances (Default)
+- Spot Instances
+- Reserved Instances
+- Dedicated Hosts
+- Dedicated Instances
+
+---
+
+## On-Demand Instances
+
+- Per second billing.
+- Billed only when instances are in running state.
+- No long-term commitments or upfront payments
+- No interuption
+- No capacity reservation
+- Pridictable pricing
+- No upfront cost
+- No discount
+- `Useful short term workload`
+- Useful for apps which can be interrupted
+
+---
+
+## Spot Instances
+
+You can set a maximum price you are willing to pay for an EC2 instance.
+
+- You pay only the spot price that is set by AWS, which is lower than the maximum.
+- When the spot price changes and is more than the maximum price you had set, your instances will be terminated.
+
+Upto 90% cheaper than on-demand instance pricing.
+
+- Good for cost sensitive workload
+- Anything which is stateless
+- Anything than can be rerun or resumed
+- Or for burst capacity needs
+
+---
+
+## Reserved Instances
+
+Up to 75% off on-demand instance pricing.
+
+- The trade off is commitment.
+- You're buying capacity in advance for `1` or `3` years. (NO 2 years option)
+- Unused reservations are still billed
+
+Reserved instance can be locked to an AZ or Region.
+
+- If you lock reservation in a AZ, you can only benefit by launching instances in that AZ. But `it also reserves capacity`.
+- If you lock reservation for a region, `it doesnt reserves capacity`. But you will benefit from launching an instance in any AZ.
+
+Partial coverage
+
+- If you launch an instance that is larger than you reserved, you will get partial coverage in this case.
+
+### Payment Terms
+
+- No Upfront `(Reduces per second fee)`
+- All Upfront `(No per second fee. Offers greatest discount.)`
+- Parial Upfront `(Reduces per second fee than no upfront option. Requires less upfront cost than all upfront option.)`
+
+---
+
+## Dedicated Hosts [OOS]
+
+- You pay for the host.
+- Only you can launch instances on the host.
+- We need to manage the capacity [How???]
+- There is no per second pricing.
+- You can launch instances of various sizes, consuming all the resource capacity of the host.
+
+This purchase option is suitable when you are licensing certain applications based on sockets/cores used.
+
+Host affinity
+
+- This allows you to link certain EC2 instances to given EC2 hosts
+- Even if you stop and start the instance, the EC2 instance remains on the same host
+
+---
+
+## Dedicated Instances [OOS]
+
+In this purchase option
+
+- You DONT pay for the host.
+- You pay a PREMIUM for launching the instances.
+- Only you can launch instances on the host.
+
+This purchase option is useful when you have strict requirement of not sharing the host.
+
+- And you dont want to manage the hardware.
+
+Extra price consideration
+
+- You pay one off hourly fees for any region you are using dedicated instances (irrespective of how many are you utilizing)
+- You pay a PREMIUM for launching dedicated instances.
+
+---
+
+# Instance Status Checks and Autorecovery
+
+Every instance has two high level status checks
+
+## System Status Checks
+
+- Loss of System Power
+- Loss of network connectivity
+- Host software issues
+- Host hardware issues
+
+## Instance Status Checks
+
+- Corrupted file system
+- Incorrect Instance Networking
+- OS Kernel Issues
+
+## Handling Failed Status Checks
+
+### Manually
+
+- stop and start an instance
+- terminate and restart an instance
+
+### Automatically
+
+You can create an Amazon CloudWatch alarm that monitors an Amazon EC2 instance and automatically recovers the instance if it becomes impaired due to an underlying hardware failure or a problem that requires AWS involvement to repair.
+
+To auto recover `Create Alarm`
+
+- Alarm Action: Recover/Reboot/Stop/Terminate
+
+A `terminated instance` cannot be recovered. This option is useful as if a instance is terminated, you can have EC2 configured to reprovision a new instance.
+
+A `recovered instance` is identical to the original instance, including the instance ID, private IP addresses, Elastic IP addresses, and all instance metadata
+
+- This will automatically try to recover the instance
+- Recovery will happen in the same AZ
+- This wont work if you are using instance store volumes.
+- Only works with instances using EBS volumes.
+
+## Termination Protection [OOS]
+
+This is a feature which adds an attribute to EC2 instances meaning they cannot be terminated while the flag is enabled.
+
+It provides protection against unintended termination and also allows role separation, where junior admins can be allowed to terminate but ONLY for instances with no protection attribute set.
+
+## Shutdown Behaviour [OOS]
+
+Set whether shutting down from the OS, stops or terminates the instance.
+
+---
+
+# Horizontal and Vertical Scaling
+
+## Vertical Scaling
+
+- As customer load increases, the server may need to grow to handle more data.
+- The server can increase in capacity, but this will require a reboot.
+- Larger instances also carry a $ premium compared to smaller instances.
+- There is an upper cap on performance - instance size.
+- No application modification is needed.
+- Works for all applications, even monoliths (all code in one app)
+
+## Horizontal Scaling
+
+- This requires a load balancer.
+- When customers try to access an application, the load balancer ensures the servers get equal parts of the load.
+- `Sessions are everything`.
+  - This requires either application support or off-host sessions.
+  - This means the servers are **stateless**, the app stores session data elsewhere.
+- No distruption while scaling up or down.
+
+---
+
+# Instance Metadata
+
+Instance metadata is data about your instance that you can use to configure or manage the running instance.
+
+- Instance metadata is way the instance or anything inside instance can get information about the environment.
+- Accessible inside all instances.
+
+## URL
+
+Instance metadata is accessed from an EC2 instance using
+
+> http://169.254.169.254/latest/meta-data/
+
+## Environment
+
+Instance metadata is divided into categories, for example, host name, events, and security groups.
+
+- Though the IPv4 public address is not avaiable to the OS, it can be obtained via the instance metadata.
+
+**NOTE**: The only IPv4 addresses an OS has are the private IPv4 address. Public IPv4 address is never configured within the OS. `AWS Internet Gateway translates the private IPv4 address to public IPv4 address`.
+
+## Authentication
+
+You can gain access to authentication information.
+
+- Instances themselves can be given access to AWS resources
+- Instance metadata is used to gain access to temporary credentials generated by assuming the role
+
+## User Data
+
+Instance metadata is also used to grant access to User-Data. This can be used by the scripts during configurations.
+
+## Unauthenticated and Unencrypted
+
+Instance Metadata service doesnt require any authentication and its not encrypted.
+
+- Anyone connected the instance cli can gain access to the instance metadata.
+- This can be blocked through firewall config for IP `169.254.169.254`.
+
+---
