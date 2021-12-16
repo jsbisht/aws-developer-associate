@@ -60,3 +60,155 @@ https://aws.amazon.com/ec2/instance-types/
 https://learn.cantrill.io/courses/1101194/lectures/27806428
 
 ---
+
+[Storage Fundamentals](./storage.md)
+
+---
+
+# EC2 Network Interfaces, Instance IPs and DNS
+
+Every EC2 has at least one Elastic Network Interface (ENI) which is the primary ENI.
+
+We can attach secondary ENIs to an EC2 instance which are in seperate subnets, but everything must be within one AZ.
+
+When you launch an instance, the Security Groups are on the network interface and not the instance.
+
+---
+
+## Elastic Network Interface
+
+- Has a MAC address
+- Has a Primary IPv4 private address
+  - Belongs to, the range of the subnet, the ENI is within.
+- 0 or more secondary private IP addresses
+- `0 or 1 public IPv4 address` (One per interface)
+- `1 elastic IP per private IPv4 address` (One per private IP address)
+- 0 or more IPv6 address on the interface (all public IP addresses by default)
+- Security groups
+  - This applies to the network interfaces and will impact all IP addresses on that interface
+  - if you need different IP addresses impacted by different security
+    groups, then you need to make multiple interfaces and apply different
+    security groups to those interfaces
+- Source / destination checks
+  - If traffic is on the interface, it will be discarded if it is not from `one of the IP addresses on the interface as source` or going to `one of the IP addresses on the interface as destination`
+  - This setting needs to be disabled for an EC2 instance to work as a NAT instance.
+
+## **NOTE**: Secondary interfaces function in all the same ways as primary interfaces except you can detach interfaces and move them to other EC2 instances.
+
+## Primary IPv4 private address
+
+Given a DNS name that is associated with the private IP say `ip-10-16-0-10.ec2.internal`. Its only resolvable inside the VPC and always points to private IP address.
+
+---
+
+## Public IPv4 address
+
+- Instance must manually be set to recieve an IPv4 addr
+- Settings into a subnet which automatically allocates an IPv4
+- Dynamic IP that is not fixed
+- If you stop an instance the address is deallocated.
+- When you start up again, it is given a brand new IPv4 address
+- Restarting the instance will not change the IP address
+- Changing between EC2 hosts will change the address
+
+Public IPv4 address is allocated a public DNS name
+
+- Inside the VPC, Public DNS name will resolve to the primary private IPv4 address of the instance
+- Outside the VPC, Public DNS name will resolve to the public IP address
+
+Public IPv4 address is not directly attached to the instance or any of the interface, its associated with it.
+
+- Translation of this address to private IPv4 address is done by AWS Internet Gateway
+
+---
+
+## Elatic IP address
+
+We can have `1 public elastic IP per private IPv4 address` (One per private IP address)
+
+- Allocated to your AWS account
+- Can associate with a private IP on the primary interface or on the secondary interface.
+- If you are using a public IPv4 and assign an elastic IP to an instance, the original dynamic IPv4 address will be lost.
+- If you remove the elastic IP from the instance, it gets a new dynamic IPv4 address.
+
+---
+
+## Considerations
+
+If you provision a secondary ENI's mac address a license, you can move around the license to different EC2 instances by dettaching and attaching the secondary ENI to that instance.
+
+If you need different rules for different IPs, then you need to multiple ENI with different Security Group on each.
+
+The OS never see's the IPv4 public address.
+
+- NAT plays a role here
+- You always configure the private IPv4 private address on the interface.
+- Never configure an OS with a public IPv4 address.
+
+---
+
+# Amazon Machine Image (AMI)
+
+AMI's can be used to launch EC2 instance.
+
+Also, you can create an AMI from an existing EC2 instance to capture the current config.
+
+- When you launch an EC2 instance, you are using an Amazon provided AMI.
+- Can be Amazon or community provided
+- Marketplace (can include commercial software)
+  - Will charge you for the instance cost and an extra cost for the AMI
+- Region wide unique ID (ami-`random set of chars`)
+- Controls permissions of who can access the AMI
+  - Default to only your account being able to access it
+  - Can be set to be public
+  - Can be made accessible to specific AWS accounts
+
+---
+
+## AMI Lifecycle
+
+### 1. Launch
+
+You could launch it with instance volume or EBS volume attached.
+
+### 2. Configure
+
+Post launch, you can customize the instance's with certain applications installed, services setup or certain volumes attached of certain sizes.
+
+### 3. Create Image
+
+Once an instance has been customized, an AMI can be created from that.
+
+- AMI will contain the permission of who can use it.
+- During image creation, snapshots of any EBS volumes attached will be taken.
+- These snapshots will be referenced within the AMI as `Block Device Mapping`.
+- Block device mapping links the snapshot IDs and a device ID for each snapshot.
+
+### 4. Launch
+
+When the AMI is used to create a new instance, this new instance will have the same EBS configuration as the original instance.
+
+During the launch:
+
+- Snapshots are used to create new EBS volumes in the AZ where you are launching the instance into.
+- These new EBS volumes are attached to the new instance using the same device ID contained in the `Block Device Mapping`.
+
+AMI are regional construct:
+
+- The AMI from AZ-1, is stored in the region. Snapshot of EBS volumes are stored in S3, which is already a regional service.
+- You can take the AMI and create the new instance in the same AZ or another AZ in the same region.
+
+**NOTE**: AMI's doesnt contain the data.
+
+---
+
+## Consideration
+
+- AMI can only be used in one region.
+- AMI can be copied between regions
+- AMI Baking: creating an AMI from a configured instance.
+- An AMI cannot be edited. If you need to update an AMI, launch an instance, make changes and then make new AMI.
+- Remember permissions by default are your account only. You can extend that to other account, partner account or make it completely public.
+- `Billing` is for the storage capacity for the EBS snapshots the AMI references
+
+---
