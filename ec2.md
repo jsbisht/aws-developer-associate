@@ -184,6 +184,10 @@ Once an instance has been customized, an AMI can be created from that.
 - These snapshots will be referenced within the AMI as `Block Device Mapping`.
 - Block device mapping links the snapshot IDs and a device ID for each snapshot.
 
+An Amazon Machine Image (AMI) is stored in Amazon S3, but it is not directly accessible. Instead, you must use API calls or the Management Console to use an AMI.
+
+**NOTE**: You can change the EBS volume size during the AMI creation.
+
 ### 4. Launch
 
 When the AMI is used to create a new instance, this new instance will have the same EBS configuration as the original instance.
@@ -205,10 +209,46 @@ AMI are regional construct:
 ## Consideration
 
 - AMI can only be used in one region.
-- AMI can be copied between regions
+- `AMI can be copied between regions`
 - AMI Baking: creating an AMI from a configured instance.
 - An AMI cannot be edited. If you need to update an AMI, launch an instance, make changes and then make new AMI.
 - Remember permissions by default are your account only. You can extend that to other account, partner account or make it completely public.
 - `Billing` is for the storage capacity for the EBS snapshots the AMI references
+
+---
+
+## Copying
+
+### Cross-account copying
+
+The owner of the source AMI is charged standard Amazon EBS or Amazon S3 transfer fees, and you are charged for the storage of the target AMI in the destination Region.
+
+### Cross-Region copying
+
+AMI once created in a region, can be copied between regions.
+
+---
+
+## Encryption
+
+You can enable `target EBS snapshots encryption` while copying AMI between regions.
+
+- The default master key is used for encryption.
+- You can change it to Customer Master Key as well.
+
+Since KMS is regional service, when moving an encrypted AMI it will be encrypted in the new region using the master key (default or CMK) of that region.
+
+### Encryption and copying
+
+The following table shows encryption support for various AMI-copying scenarios.
+
+| Scenario | Description                | Supported |
+| -------- | -------------------------- | --------- |
+| 1        | Unencrypted-to-unencrypted | Yes       |
+| 2        | Encrypted-to-encrypted     | Yes       |
+| 3        | Unencrypted-to-encrypted   | Yes       |
+| 4        | Encrypted-to-unencrypted   | No        |
+
+**NOTE**: You cannot copy an encrypted snapshot to yield an unencrypted one.
 
 ---
