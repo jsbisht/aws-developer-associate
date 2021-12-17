@@ -470,3 +470,11 @@ Instance Metadata service doesnt require any authentication and its not encrypte
 - This can be blocked through firewall config for IP `169.254.169.254`.
 
 ---
+
+## CLI
+
+> wget http://s3.amazonaws.com/ec2metadata/ec2-metadata
+> chmod u+x ec2-metadata
+> ./ec2-metadata --help
+
+---
