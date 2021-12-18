@@ -7,3 +7,4 @@
 - [Elatic Block Storage (EBS)](./ebs.md)
 - [CloudWatch, X-Ray](./monitoring.md)
 - [Elastic Compute Service (ECS)](./ecs.md)
+- [Advanced EC2](./ec2-plus.md)
