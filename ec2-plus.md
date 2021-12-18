@@ -95,7 +95,7 @@ Credentials Precedence used by CLI in order to interact with AWS
 
 ---
 
-# AWS System Manager Parameter Store
+# AWS Systems Manager - Parameter Store
 
 Passing secrets into an EC2 instance is bad practice because anyone
 who has access to the meta-data has access to the secrets.
@@ -212,12 +212,105 @@ Wizard is intitiated through CLI using
 
 Log file path
 
+> /var/log/secure
+> group name: secure
+
 > /var/log/httpd/access_log
 > group name: access_log
 
 > /var/log/httpd/error_log
 > group name: error_log
 
-Config post the wizard is located at
+Config post the wizard config is stored in following file and stored in SSM
 
 > /opt/aws/amazon-cloudwatch-agent/bin/config.json
+
+Parameter store name
+
+> AmazonCloudWatch-linux
+
+Which AWS credentials to use to send json config to parameter store
+
+> 1. ASIAXXXXXXXXXXX (From SDK) [Default]
+> 2. Other
+
+The wizard create a paramter store `AmazonCloudWatch-linux` which will be store the configuration to be used to monitor EC2 metrics.
+
+## Post Wizard config
+
+CloudWatch Agent expects a system software called `collectd` to be installed
+
+> sudo mkdir -p /usr/share/collectd/
+> sudo touch /usr/share/collectd/types.db
+
+Now we start the CloudWatch Agent and provide it with config stored inside the parameter store. The agent download the configuration and configures itself as per that configuration.
+
+- Since we have an attached Instance Role that has the permission required, the agent can `inject the logs from the web server and the system into CloudWatch Logs`.
+
+Load Config and start agent
+
+> sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c ssm:AmazonCloudWatch-linux -s
+
+---
+
+# EC2 Placement Groups
+
+When you launch a new EC2 instance, the EC2 service attempts to place the instance in such a way that all of your instances are spread out across underlying hardware to minimize correlated failures.
+
+Depending on the type of workload, you can create a placement group using one of the following placement strategies:
+
+---
+
+## Cluster (PERFORMANCE)
+
+packs instances close together inside an Availability Zone. This strategy enables workloads to a`chieve the low-latency network performance` necessary for tightly-coupled node-to-node communication that is typical of HPC applications.
+
+- Achieves the highest level of performance available with EC2.
+- Best practice is to launch all of the instances within that group at the same time. (not manadatory)
+- Use the same instance type (not mandatory)
+- All the instances should be in same AZ.
+- All instances are have direct connections to each other and can have a bandwidth of **10 Gbps** when compared to usual 5Gbps.
+
+**NOTE**: If the hardware fails, the entire cluster might fail.
+
+---
+
+## Spread (Hardware Failure)
+
+strictly places a small group of instances `across distinct underlying hardware` to reduce correlated failures.
+
+- Spread groups can span multiple AZs.
+- Instances are placed into seperate isolated infrastructure racks within each AZ.
+- Each has their own power supply and networking hardware.
+- Useful for creating several mirrors of an application.
+
+**NOTE**: Limits 7 instances per AZ. This cannot be increased. Dedicated instance or host are not supported in this setup.
+
+---
+
+## Partition (Resilience)
+
+spreads your instances across _logical partitions_ such that groups of `instances in one partition do not share the underlying hardware with groups of instances in different partitions`. This strategy is typically used by large distributed and replicated workloads, such as Hadoop, Cassandra, and Kafka.
+
+- Useful when you have more than 7 instance required.
+- Partition groups can span multiple AZs.
+- Each AZ can have maximum 7 partitions.
+- Each partition has its own racks and there is no resource sharing between partitions.
+
+Useful to create huge scale parallel processing groups having multiple instances in each group, which each group is isolated from each other.
+
+**NOTE**: Topology aware applications like `HDFS, HBase, and Cassandra` can make use of the distributed nature of instance placement. In such setup, impact of failure can be contained to part of an application.
+
+**NOTE**: You can choose how many instances to launch in each group.
+
+**NOTE**: This is not supported on dedicated hosts.
+
+---
+
+# EBS Optimized Instances
+
+EBS optimisation on instances means dedicated bandwidth for storage networking - separate from data networking.
+
+Some instance types support this. This is generally enabled by default.
+
+- Having this enabled incurs extra cost.
