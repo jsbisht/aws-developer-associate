@@ -6,6 +6,8 @@ In systems automation, bootstrapping allows the system to self configure or perf
 
 This could perform some software installs and post install configs.
 
+---
+
 ## User Data
 
 Bootstrapping is done using user data - accessed via the meta data service. The following gives the user data part of the instance meta data. It logs the user data that was passed to the instance.
@@ -27,6 +29,8 @@ NOTE: Logging for the scripts being run will be part of either `cloud-init.log` 
 
 NOTE: When using CloudFormation, the UserData can be passed as well (but needs to be in Base 64 format).
 
+---
+
 ## Boot-Time-To-Service-Time
 
 This is a metric which measures how quickly you are able to bring an instance into service (say accept user requests).
@@ -45,6 +49,8 @@ Allowing a service to assume a role grants the service the permissions that role
 EC2 Instance Role allows anything running within that service permission that are attached to EC2 instance role.
 
 NOTE: For a given instance in the EC2 instances list select "Instance -> Security -> Modify IAM Role"
+
+---
 
 ## InstanceProfile
 
@@ -107,6 +113,8 @@ Parameter store
 
 Public Parameters - Used to refer to latest AMI's per region.
 
+---
+
 ## Create Parameter
 
 Parameter Name (eg. `/wordpress/db-user`)
@@ -142,6 +150,8 @@ Data Type
 
 Value (eg. `dbadmin`)
 
+---
+
 ## CLI
 
 To get a single parameter
@@ -157,3 +167,57 @@ To get all the parameter with unencrypted values
 > aws ssm get-paramters-by-path --names /wordpress/ --with-decryption
 
 (Decryption requires permission to access parameter store and permission for the CMK from KMS used to encrypt the data)
+
+---
+
+# System and Application Logging on EC2
+
+Cloudwatch monitors the outside metrics of an instance
+Cloudwatch logs is for logging
+
+Both of them doesnt natively capture data inside an instance.
+
+CloudWatch Agent is required for OS visible data. It sends this data into CW
+
+For CW to function, it needs configuration and permissions in addition
+to having to install the cloud watch agent.
+
+The cloudwatch agent needs to know what information to inject
+into cloud watch and cloud watch logs.
+
+## Permission
+
+The agent needs some permissions to interact with AWS. This is done with an IAM role as best practice. `The IAM role is attached to the instance` which provides the instance and anything running on the instance, permissions to manage CW logs.
+
+The role say `CloudWatchRole` will require following policies to be attached:
+
+- CloudWatchAgentServerPolicy
+- AmazonSSMFullAccess
+
+The data is then injected into CW logs.
+
+## Logging Config
+
+There is `one log group for each individual log` we want to capture.
+
+There is `one log stream for each group for each instance` that needs management.
+
+We can use parameter store to capture the configuration for the CW agent.
+
+## Config Wizard
+
+Wizard is intitiated through CLI using
+
+> sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-config-wizard
+
+Log file path
+
+> /var/log/httpd/access_log
+> group name: access_log
+
+> /var/log/httpd/error_log
+> group name: error_log
+
+Config post the wizard is located at
+
+> /opt/aws/amazon-cloudwatch-agent/bin/config.json
