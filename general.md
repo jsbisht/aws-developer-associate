@@ -140,6 +140,12 @@ You are creating an application that stores extremely sensitive financial inform
 
 - Terminating SSL terminates the security of a connection over HTTP, removing the S for "Secure" in HTTPS. This violates the "encryption in transit" requirement in the scenario.
 
+If at least one instance behind the ELB is working, then the ELB is working.
+
+So out of many instances if one fails, the ELB will stop sending requests to the failed instance.
+
+- If no working instance exist ELB will start sending 504 Gateway Timeout errors?
+
 ---
 
 # AWS Route53
@@ -285,7 +291,7 @@ When you stop an Amazon EC2 instance, its public IP address is released. When yo
 
 Copying a source AMI results in an identical but distinct target AMI with its own unique identifier. I
 
-## Auto Scaling Groups
+## Auto Scaling Groups (ASG)
 
 You create collections of EC2 instances, called Auto Scaling groups.
 
@@ -293,6 +299,8 @@ You create collections of EC2 instances, called Auto Scaling groups.
 - You can specify the `maximum number of instances` in each Auto Scaling group
 - You specify the `desired capacity`, either when you create the group or at any time thereafter (Auto Scaling ensures that your group has this many instances)
 - You specify the `scaling policies`, (Auto Scaling can launch or terminate instances as demand on your application increases or decreases)
+
+NOTE: ASG can terminate or automatically replace the failed instance?
 
 ## Cluster placement groups
 

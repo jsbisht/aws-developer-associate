@@ -29,6 +29,8 @@ NOTE: Logging for the scripts being run will be part of either `cloud-init.log` 
 
 NOTE: When using CloudFormation, the UserData can be passed as well (but needs to be in Base 64 format).
 
+**NOTE**: Commands specified in user data will only run when the instance is provisioned. `It wont be run every time the instance moves from STOPPED to RUNNING`.
+
 ---
 
 ## Boot-Time-To-Service-Time
@@ -263,13 +265,14 @@ Depending on the type of workload, you can create a placement group using one of
 
 ## Cluster (PERFORMANCE)
 
-packs instances close together inside an Availability Zone. This strategy enables workloads to a`chieve the low-latency network performance` necessary for tightly-coupled node-to-node communication that is typical of HPC applications.
+packs instances close together inside an Availability Zone. This strategy enables workloads to `achieve the low-latency network performance` necessary for tightly-coupled node-to-node communication that is typical of HPC applications.
 
 - Achieves the highest level of performance available with EC2.
 - Best practice is to launch all of the instances within that group at the same time. (not manadatory)
 - Use the same instance type (not mandatory)
 - All the instances should be in same AZ.
 - All instances are have direct connections to each other and can have a bandwidth of **10 Gbps** when compared to usual 5Gbps.
+- Gives higher packets per second (PPS)
 
 **NOTE**: If the hardware fails, the entire cluster might fail.
 

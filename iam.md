@@ -380,4 +380,4 @@ SCP only act as boundries
 
 - Permission only in Identity Policy but not in SCP, is not allowed as its beyond whats allowed by SCP
 
-![permission-evaluation-flow](imgs/permission-evaluation-flow.png)
+![permission-evaluation-flow](ss/permission-evaluation-flow.png)

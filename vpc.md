@@ -106,7 +106,7 @@ So, 40 ranges in total ideally.
 
 ### VPC Sizing Table
 
-![vpc sizing table](./imgs/vpc-sizing-table.png)
+![vpc sizing table](./ss/vpc-sizing-table.png)
 
 Important questions we should be answering before creating subnets is:
 
@@ -128,7 +128,7 @@ In total thats 16 subnets, which will be obtained by splitting `/16` network int
 
 - If we had started from prefix `/17` instead we would get 16 subnets of `/21` subnets
 
-![vpc structure](./imgs/vpc-structure.png)
+![vpc structure](./ss/vpc-structure.png)
 
 ---
 
@@ -259,11 +259,11 @@ with our on premise identification service.
 
 This will be the end result of the VPC design
 
-![vpc-design-final](./imgs/vpc-design-final.png)
+![vpc-design-final](./ss/vpc-design-final.png)
 
 At the start we will have the following
 
-![vpc-design-initial](./imgs/vpc-design-initial.png)
+![vpc-design-initial](./ss/vpc-design-initial.png)
 
 A VPC has a configuration object called DHCP Option Set applied to it. This is used to allocate IP addresses.
 
@@ -282,13 +282,13 @@ We can use https://www.site24x7.com/tools/ipv4-subnetcalculator.html for subnet 
 
 Post subnet creation we will have the following
 
-![vpc-design-subnets](./imgs/vpc-design-subnets.png)
+![vpc-design-subnets](./ss/vpc-design-subnets.png)
 
 NOTE: the blue color indicate the private zone of the VPC
 
 We will configure web tier to be public subnets, to make all the subnets be connected to the internet.
 
-![img](./imgs/vpc-design-igw.png)
+![img](./ss/vpc-design-igw.png)
 
 - Now for making the subnets public, we need internet gateway attached to the VPC.
 - We will create a Route Table for the public subnets under the VPC.
@@ -301,7 +301,7 @@ We will configure web tier to be public subnets, to make all the subnets be conn
   - We will add another route to set `default route` for IPv4 and IPv6 `0.0.0.0/0 & ::/0` addresses. This any route not belonging to the VPC, `will be forwarded to the IGW`.
 - Each subnet of web tier will then be configured to auto assign a public IP address.
 
-![img](./imgs/vpc-design-route-table.png)
+![img](./ss/vpc-design-route-table.png)
 
 ---
 
@@ -531,13 +531,13 @@ But note that the public IPs cannot connect to these private IP's when NAT is us
 
 ## NAT Architecture
 
-![img](./imgs/nat-architecture-1.png)
+![img](./ss/nat-architecture-1.png)
 
 We have an App Tier which has instances with private IPs. They cannot connect to AWS Public Zone or Public Internet.
 
 Now if we want the App Tier instances to connect to the internet, we could do it through public instances on Web Tier.
 
-![img](./imgs/nat-architecture-2.png)
+![img](./ss/nat-architecture-2.png)
 
 We instead choose a NAT Gateway to provide private IP based instances access to internet.
 
