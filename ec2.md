@@ -51,7 +51,7 @@ full instance type
 - char after period: `Instance size`. Memory and CPU considerations.
   - often easier to scale system with a larger number of smaller instance sizes
 
-![img](ss/ec2-instance-types.png)
+![img](ss/ec2-instance-types.webp)
 
 https://aws.amazon.com/ec2/instance-types/
 

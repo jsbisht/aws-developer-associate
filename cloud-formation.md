@@ -25,7 +25,7 @@ Resources:
 
 Resources `Properties` are used by CFN when creating the matching Physical Resources.
 
-![img](./imgs/CloudFormationLogicalAndPhysicalResources.png)
+![img](./imgs/CloudFormationLogicalAndPhysicalResources.webp)
 
 The following template will create an S3 bucket if name is unique across aws and an instance using AMI specified. This is a `non-portable template` and can be used only once (until your usage is preceded by deletion of stack created by last usage) since the bucket name is hardcoded. Also since AMI id is region specific, this template can only be used in one region.
 
@@ -43,6 +43,45 @@ Resources:
       ImageId: "ami-04d29b6f966df1537"
 ```
 
+Portable version of the above CFN template is as follows, which requires us to input the AMI id as a parameter:
+
+```yaml
+Parameters:
+  KeyName:
+    Type: "AWS::EC2::KeyPair::KeyName"
+    Description: "Key Pair for EC2"
+  AMIID:
+    Type: "String"
+    Description: "AMI for EC2"
+Resources:
+  Bucket:
+    Type: "AWS::S3::Bucket"
+  Instance:
+    Type: "AWS::EC2::Instance"
+    Properties:
+      KeyName: !Ref "KeyName"
+      InstanceType: "t2.micro"
+      ImageId: !Ref "AMIID"
+```
+
+To make this even more portable using SSM we can avoid specifying the Key related details. Also, this uses portable version of AMI referencing which fetches the correct AMI id from the SSM parameter store in each region:
+
+```yaml
+Parameters:
+  LatestAmiId:
+    Description: "AMI for EC2"
+    Type: "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>"
+    Default: "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+Resources:
+  Bucket:
+    Type: "AWS::S3::Bucket"
+  Instance:
+    Type: "AWS::EC2::Instance"
+    Properties:
+      InstanceType: "t2.micro"
+      ImageId: !Ref "LatestAmiId"
+```
+
 ---
 
 ## Template and Pseudo Parameters
@@ -55,7 +94,7 @@ Resources: set of resources
 
 Template and Pseudo Parameters allow input into CloudFormation. They allow input from console, CLI or API.
 
-![img](./imgs/CloudFormationTemplateParameters.png)
+![img](./imgs/CloudFormationTemplateParameters.webp)
 
 Pseudo parameters are parameters that are predefined by AWS CloudFormation. You don't declare them in your template. Use them the same way as you would a parameter, as the argument for the Ref function.
 
@@ -65,7 +104,7 @@ Outputs:
     Value: !Ref "AWS::Region"
 ```
 
-![img](./imgs/CloudFormationPseudoParameters.png)
+![img](./imgs/CloudFormationPseudoParameters.webp)
 
 Following is the list of Pseudo Parameters that are available:
 
@@ -93,14 +132,14 @@ Reference a value from other one
 - Ref
 - Fn::GetAtt
 
-![img](./imgs/CloudFormationFnGetAtt.png)
+![img](./imgs/CloudFormationFnGetAtt.webp)
 
 Join or split strings
 
 - Fn::Join
 - Fn::Split
 
-![img](./imgs/CloudFormationFnJoin.png)
+![img](./imgs/CloudFormationFnJoin.webp)
 
 Get list of AZs and Select one from the list
 
@@ -109,7 +148,7 @@ Get list of AZs and Select one from the list
 
 **NOTE**: If you have badly configured VPC (say default VPC where you have deleted subnets), then GetAZs might not return all the AZ's.
 
-![img](./imgs/CloudFormationFnGetAZs.png)
+![img](./imgs/CloudFormationFnGetAZs.webp)
 
 Provision resources based on conditional check
 
@@ -128,13 +167,13 @@ Sub function can be passed:
 - Logical Resource name or id
 - Logical Resource attribute name
 
-![img](./imgs/CloudFormationFnBase64.png)
+![img](./imgs/CloudFormationFnBase64.webp)
 
 Build CIDR block for networking by automatically building subnet ranges
 
 - Fn::Cidr
 
-![img](./imgs/CloudFormationFnCidr.png)
+![img](./imgs/CloudFormationFnCidr.webp)
 
 Others
 
@@ -149,21 +188,117 @@ Others
 ```yaml
 Parameters: set of parameters
 
-Mappings: set of mappings
+Mappings: use to specify conditional parameter values
 
 Resources: set of resources
 ```
 
 Following is an example of finding a suitable AMI based on the lookup table provided.
 
-![img](./imgs/CloudFormationMappings.png)
+![img](./imgs/CloudFormationMappings.webp)
 
 ---
 
 ## CloudFormation Outputs
 
+```yaml
+Outputs:
+  - Describes the values that are returned whenever you view your stack's properties. Say, while using "aws cloudformation describe-stacks" AWS CLI command
+```
+
 The optional Outputs section declares output values that you can import into other stacks (to `create cross-stack references`), return in response (to describe stack calls), or view on the AWS CloudFormation console.
 
-![img](./imgs/CloudFormationOutputs.png)
+![img](./imgs/CloudFormationOutputs.webp)
 
 ---
+
+## CloudFormation Conditions
+
+```yaml
+Parameters: set of parameters
+
+Mappings: set of mappings
+
+Resources: set of resources
+
+Conditions:
+  - Conditions that control whether certain resources are created
+  - or whether certain resource properties are assigned a value during stack creation or update.
+  - For example, you could conditionally create a resource that depends on whether the stack is for a production or test environment.
+```
+
+Conditions are evaluated before any logical resource creation starts. It can be used to decide whether certain resource should be created or not.
+
+![img](./imgs/CloudFormationConditions.webp)
+
+---
+
+## CloudFormation DependsOn
+
+CloudFormation decides the order based on which resource references other resource. But to explicitly define the dependency you can use DependsOn attribute.
+
+When you add a DependsOn attribute to a resource, that resource is created only after the creation of the resource specified in theDependsOn attribute.
+
+Consider the following example where we are creating an VPC and an Internet Gateway.
+
+- A VPC can be created without creating Internet Gateway first
+- An Internet Gateway can be created without creating an VPC first
+- But an Internet Gateway Attachment which connect both VPC and Internet Gateway, will have to wait until both of them are created first. So, this will implicitly depend on a VPC and Internet Gateway
+
+For an elastic IP to successfully be configured through CFN
+
+- It needs to be attached only after an Internet Gateway Attachment is created
+- It needs to be deleted before an Internet Gateway Attachment is deleted
+
+![img](./imgs/CloudFormationDependsOn.webp)
+
+---
+
+## CloudFormation CreationPolicy, WaitConditions and cfn-signal
+
+Consider an EC2 instance that bootstraps itself using the user data specified. When this EC2 instance is created through CFN, the EC2 instance creation will succeed long before the bootstraping completes. And even when the bootstraping completes, there is no way to tell CFN that the bootstrap was successful or failed.
+
+CreationPolicy, WaitConditions and cfn-signal can all be used in such case to let CFN know that the bootstraping was success or not.
+
+### CloudFormation Signal
+
+- Configure CFN to hold and wait for given number of signals or wait for a timeout to expire (12 hours max)
+- So, in this case the logical resource EC2 will not reach the CREATE_COMPLETE state
+- If the number of signals required are received, CFN will go to CREATE_COMPLETE (that means the bootstraping was successful)
+- If there is any failure, CFN will go to FAILURE and the stack creation will fail
+- If the timeout is reached, CFN will go to FAILURE and the stack creation will fail
+
+To send success or failure signals, we use a utility `cfn-signal` running on the EC2 instance.
+
+### Creation Policy
+
+To signal creation of EC2 or Auto Scaling Groups, you should use CreationPolicy.
+
+- A CreationPolicy is specifically tied to that resource.
+
+In the following example:
+
+- AutoScalingGroup is waiting for 3 signal
+- Each EC2 instance will send a signal using `cfn-signal`
+
+![img](./imgs/CloudFormationCreationPolicy.webp)
+
+### Wait Conditions
+
+Just like CreationPolicy, the allow resource creation to be paused until timeout or signal is received.
+
+WaitCondition can depend of other resources. And other resources can depend of WaitCondition.
+
+- It can be used a progress gate. So that checks cannot be passed until that signals are received.
+- WaitCondition will not proceed to CREATE_COMPLETE until the timeout or signal is received.
+
+WaitCondition relies on WaitHandle, which `generates a presigned URL to send signal`.
+
+- Since its presigned, no credentials are required to use it.
+
+Consider you have an EC2 instance or say an external system that is used for licencing.
+
+- They send a JSON response as a signal containing few attributes which can then be referenced else where.
+- The attribute of the signal can be accessed using `Fn::GetAtt` function
+
+![img](./imgs/CloudFormationWaitCondition.webp)

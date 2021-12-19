@@ -1,10 +1,10 @@
 # Cloud HSM
 
-![img](./ss/hsm-1.png)
+![img](./ss/hsm-1.webp)
 
-![img](./ss/hsm-2.png)
+![img](./ss/hsm-2.webp)
 
-![img](./ss/hsm-3.png)
+![img](./ss/hsm-3.webp)
 
 # EC2 plus
 

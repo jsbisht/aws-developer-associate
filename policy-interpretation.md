@@ -142,7 +142,7 @@ When evaluating effective policy permission you have to consider:
   - If you are accessing a resource using an IAM role or you might be accessing a resource using a session which is the subset of what that role allows, then these policies will also be considered.
 - Identity Policies
 
-![permission-evaluation-flow](ss/permission-evaluation-flow.png)
+![permission-evaluation-flow](ss/permission-evaluation-flow.webp)
 
 **NOTE**: If given action on the resource is allowed by resouce policy the flow stops.
 
@@ -157,4 +157,4 @@ When access is made from Account A to another Account B containing the resource 
 - If **Account A allows access to resource in Account B** and **Account B denies access to resource from Account A**, the permission is denied.
 - If **Account A denies access to resource from Account B** and **Account B allows access to resource in Account A**, the permission is denied.
 
-![permission-evaluation-cross-account](ss/permission-evaluation-cross-account.png)
+![permission-evaluation-cross-account](ss/permission-evaluation-cross-account.webp)
