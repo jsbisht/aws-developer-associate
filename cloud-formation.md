@@ -302,3 +302,49 @@ Consider you have an EC2 instance or say an external system that is used for lic
 - The attribute of the signal can be accessed using `Fn::GetAtt` function
 
 ![img](./imgs/CloudFormationWaitCondition.webp)
+
+---
+
+## CloudFormation Nested Stacks
+
+A CFN Stack is isolated, which means it contains all of the AWS resources that the project needs.
+
+Resources in a single stack `share a lifecycle`. In an isolated stack the resources are created together, updated together and deleted together.
+
+- Designing CFN stack this way is fine until you hit the limits.
+- There is limit of 500 resources per stack.
+- Also, you can't easily resource resources.
+- Also, you can't easily reference other stacks.
+
+For complex projects, you are recommended to use Nested Stacks or Cross-Stack references.
+
+### About Nested Stacks
+
+For nested stacks you start with a Root Stack and Parent Stack. In the following example the Root Stack and the Parent Stack are the same.
+
+`Root Stack` is the stack that gets created first.
+
+`Parent Stack` is the parent of the stack that it immediately creates. That is anything that has its own nested stack.
+
+**NOTE**: You can only use `Outputs` with nested stack. You can directly reference the logical resources created in any of the nested stacks.
+
+The `Root Stack` can take the `Outputs` from one nested stack (VPCSTACK) and pass it as parameters to another (ADSTACK).
+
+- Root Stack orchestrates the creation of nested stacks.
+
+![img](./imgs/CloudFormation-NestedStacks.webp)
+
+- Once the logical resource in the nested stack are created its marked as `CREATE_COMPLTE`. Once all the nested stacks within a Root Stack are created it is also marked as `CREATE_COMPLETE`.
+
+- The advantage of using nested stack is that the for each nested template can be reused in other stacks.
+
+  - In doing so, you are resuing the CloudFormation template code but not the actual resources created by the reuse of the template.
+  - This is unlike what happens with the usage of Cross-Stack reference.
+
+- Nested Stacks are usedful when you want to create resources that are `all part of one solution` and are `lifecycle linked`.
+
+### When not to use nested stack
+
+When you need one portion of the stack to stay longer than the other, nested stack is not the ideal choice.
+
+In such case, Cross-Stack reference are better suited.
