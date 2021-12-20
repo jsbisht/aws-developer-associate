@@ -348,3 +348,111 @@ The `Root Stack` can take the `Outputs` from one nested stack (VPCSTACK) and pas
 When you need one portion of the stack to stay longer than the other, nested stack is not the ideal choice.
 
 In such case, Cross-Stack reference are better suited.
+
+---
+
+## CloudFormation Cross-Stack Reference
+
+CloudFormation Stacks are designed to be isolated and self-contained.
+
+- Outputs are normally not visible from other stacks
+- Nested stacks can reference them
+
+Outputs though can be exported, making them visible from other stacks.
+
+- exports must have a unique name in the region
+- We use `Ref` function to reference resource in the same stack
+- We use `Fn::ImportValue` instead of Ref to use exports of one stack into another
+
+![img](./imgs/CloudFormationCrossStackReferences2.png)
+
+**NOTE**: Cross region or Cross account usage of exports doesnt work.
+
+### difference between cross-stack and nested-stack
+
+- Cross stack allows us to reuse resources
+- Nested stack allows us to reuse templates
+
+---
+
+## CloudFormation Stack Sets
+
+StackSets are a feature of CloudFormation allowing infrastructure to be deployed and managed across multiple regions and multiple accounts from a single location.
+
+- This can be done without having to change account, pass credentials for each or change regions.
+
+StackSets are containers in an admin account.
+
+- These containers contains many stack instances
+- Stack instances are reference to stack in a single region, in a single account
+- Stack instances and stack are created in a `target account` (just another aws account that is a target for the stack set to do the deployment)
+
+To manage cross accout and cross region access StackSets use either:
+
+- Self Managed Role
+- Service Managed Role
+
+With `Service Managed Role` you use CloudFormation in conjuction with AWS Organisation, so all the roles gets created on our behalf.
+
+![img](./imgs/CloudFormationStackSets.webp)
+
+### Terms
+
+**Concurrent Accounts** - This value decides how many account we should be be deploying in simulatanously.
+
+**Failure Tolerance** - This value indicates how many individual deployments can fail until the whole StackSet is considered a failure
+
+**Retain Stacks** - By default the stacks will be removed, but this option allows us to retain them.
+
+### Use Cases
+
+- To enable AWS Config across a large range of accounts
+- To set AWS Config Rules for MFA, EIPS (Elastic IPs), EBS Encryption
+- To create IAM roles for cross-account access at scale
+
+---
+
+## CloudFormation Deletion Policy
+
+With the DeletionPolicy attribute you can preserve or (in some cases) backup a resource when its stack is deleted.
+
+- If a resource has no DeletionPolicy attribute, AWS CloudFormation deletes the resource by default.
+
+You specify a DeletionPolicy attribute for each resource that you want to control. Possible option are:
+
+- Delete (default)
+- Retain
+- Snapshot (Applicable to EBS, ElastiCache, Neptune, RDS, Redshit)
+
+So, say you have an EC2 instance with an attached EBS volume created using CFN. With Snapshot option the data on the EBS volume will be copied to a snapshot.
+
+- Post cleanup of the stack the resources will be deleted but the snapshot will remain.
+
+![img](./imgs/CloudFormationDeletionPolicy.webp)
+
+### Consideration
+
+- If you remove a logical resource from the template, the deletion policy applies
+- If you just update a logical resource from the template, the deletion policy doesnt apply
+  - The resource in such case will be deleted and recreated
+  - Any data on the resource will be lost
+
+---
+
+## CloudFormation Stack Roles
+
+CloudFormation Stack Roles is used to control what identities (say Phil) with lesser permissions can do using CFN, allowing to achive role seperation.
+
+While using CFN to create stack that creates physical resources, permission for actions on stack and those physical resources is needed.
+
+- CFN uses the permissions of the logged in identity
+- Admin team can create, update and delete AWS `resources`
+- Then Phil only needs permission for creating, updating and deleting the `stack` and the `PassRole` permission
+
+Phil can take the CFN template created by the admin team and use it to create the stack.
+
+- Also, admin team creates an IAM role that can only be passed by Phil, but cannot be assumed
+- PassRole is used by identities to pass this into CFN
+- This means that role is attached to the stack and used for any operations `rather than using the identities permission`
+
+![img](./imgs/CloudFormationStackRoles.webp)
