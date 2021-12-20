@@ -25,7 +25,7 @@ Resources:
 
 Resources `Properties` are used by CFN when creating the matching Physical Resources.
 
-![img](./imgs/CloudFormationLogicalAndPhysicalResources.webp)
+![img](./imgs/cloud-formation/CloudFormationLogicalAndPhysicalResources.webp)
 
 The following template will create an S3 bucket if name is unique across aws and an instance using AMI specified. This is a `non-portable template` and can be used only once (until your usage is preceded by deletion of stack created by last usage) since the bucket name is hardcoded. Also since AMI id is region specific, this template can only be used in one region.
 
@@ -94,7 +94,7 @@ Resources: set of resources
 
 Template and Pseudo Parameters allow input into CloudFormation. They allow input from console, CLI or API.
 
-![img](./imgs/CloudFormationTemplateParameters.webp)
+![img](./imgs/cloud-formation/CloudFormationTemplateParameters.webp)
 
 Pseudo parameters are parameters that are predefined by AWS CloudFormation. You don't declare them in your template. Use them the same way as you would a parameter, as the argument for the Ref function.
 
@@ -104,7 +104,7 @@ Outputs:
     Value: !Ref "AWS::Region"
 ```
 
-![img](./imgs/CloudFormationPseudoParameters.webp)
+![img](./imgs/cloud-formation/CloudFormationPseudoParameters.webp)
 
 Following is the list of Pseudo Parameters that are available:
 
@@ -132,14 +132,14 @@ Reference a value from other one
 - Ref
 - Fn::GetAtt
 
-![img](./imgs/CloudFormationFnGetAtt.webp)
+![img](./imgs/cloud-formation/CloudFormationFnGetAtt.webp)
 
 Join or split strings
 
 - Fn::Join
 - Fn::Split
 
-![img](./imgs/CloudFormationFnJoin.webp)
+![img](./imgs/cloud-formation/CloudFormationFnJoin.webp)
 
 Get list of AZs and Select one from the list
 
@@ -148,7 +148,7 @@ Get list of AZs and Select one from the list
 
 **NOTE**: If you have badly configured VPC (say default VPC where you have deleted subnets), then GetAZs might not return all the AZ's.
 
-![img](./imgs/CloudFormationFnGetAZs.webp)
+![img](./imgs/cloud-formation/CloudFormationFnGetAZs.webp)
 
 Provision resources based on conditional check
 
@@ -167,13 +167,13 @@ Sub function can be passed:
 - Logical Resource name or id
 - Logical Resource attribute name
 
-![img](./imgs/CloudFormationFnBase64.webp)
+![img](./imgs/cloud-formation/CloudFormationFnBase64.webp)
 
 Build CIDR block for networking by automatically building subnet ranges
 
 - Fn::Cidr
 
-![img](./imgs/CloudFormationFnCidr.webp)
+![img](./imgs/cloud-formation/CloudFormationFnCidr.webp)
 
 Others
 
@@ -195,7 +195,7 @@ Resources: set of resources
 
 Following is an example of finding a suitable AMI based on the lookup table provided.
 
-![img](./imgs/CloudFormationMappings.webp)
+![img](./imgs/cloud-formation/CloudFormationMappings.webp)
 
 ---
 
@@ -208,7 +208,7 @@ Outputs:
 
 The optional Outputs section declares output values that you can import into other stacks (to `create cross-stack references`), return in response (to describe stack calls), or view on the AWS CloudFormation console.
 
-![img](./imgs/CloudFormationOutputs.webp)
+![img](./imgs/cloud-formation/CloudFormationOutputs.webp)
 
 ---
 
@@ -229,7 +229,7 @@ Conditions:
 
 Conditions are evaluated before any logical resource creation starts. It can be used to decide whether certain resource should be created or not.
 
-![img](./imgs/CloudFormationConditions.webp)
+![img](./imgs/cloud-formation/CloudFormationConditions.webp)
 
 ---
 
@@ -250,7 +250,7 @@ For an elastic IP to successfully be configured through CFN
 - It needs to be attached only after an Internet Gateway Attachment is created
 - It needs to be deleted before an Internet Gateway Attachment is deleted
 
-![img](./imgs/CloudFormationDependsOn.webp)
+![img](./imgs/cloud-formation/CloudFormationDependsOn.webp)
 
 ---
 
@@ -281,7 +281,7 @@ In the following example:
 - AutoScalingGroup is waiting for 3 signal
 - Each EC2 instance will send a signal using `cfn-signal`
 
-![img](./imgs/CloudFormationCreationPolicy.webp)
+![img](./imgs/cloud-formation/CloudFormationCreationPolicy.webp)
 
 ### Wait Conditions
 
@@ -301,7 +301,7 @@ Consider you have an EC2 instance or say an external system that is used for lic
 - They send a JSON response as a signal containing few attributes which can then be referenced else where.
 - The attribute of the signal can be accessed using `Fn::GetAtt` function
 
-![img](./imgs/CloudFormationWaitCondition.webp)
+![img](./imgs/cloud-formation/CloudFormationWaitCondition.webp)
 
 ---
 
@@ -332,7 +332,7 @@ The `Root Stack` can take the `Outputs` from one nested stack (VPCSTACK) and pas
 
 - Root Stack orchestrates the creation of nested stacks.
 
-![img](./imgs/CloudFormation-NestedStacks.webp)
+![img](./imgs/cloud-formation/CloudFormation-NestedStacks.webp)
 
 - Once the logical resource in the nested stack are created its marked as `CREATE_COMPLTE`. Once all the nested stacks within a Root Stack are created it is also marked as `CREATE_COMPLETE`.
 
@@ -364,7 +364,7 @@ Outputs though can be exported, making them visible from other stacks.
 - We use `Ref` function to reference resource in the same stack
 - We use `Fn::ImportValue` instead of Ref to use exports of one stack into another
 
-![img](./imgs/CloudFormationCrossStackReferences2.png)
+![img](./imgs/cloud-formation/CloudFormationCrossStackReferences2.png)
 
 **NOTE**: Cross region or Cross account usage of exports doesnt work.
 
@@ -394,7 +394,7 @@ To manage cross accout and cross region access StackSets use either:
 
 With `Service Managed Role` you use CloudFormation in conjuction with AWS Organisation, so all the roles gets created on our behalf.
 
-![img](./imgs/CloudFormationStackSets.webp)
+![img](./imgs/cloud-formation/CloudFormationStackSets.webp)
 
 ### Terms
 
@@ -428,7 +428,7 @@ So, say you have an EC2 instance with an attached EBS volume created using CFN. 
 
 - Post cleanup of the stack the resources will be deleted but the snapshot will remain.
 
-![img](./imgs/CloudFormationDeletionPolicy.webp)
+![img](./imgs/cloud-formation/CloudFormationDeletionPolicy.webp)
 
 ### Consideration
 
@@ -455,4 +455,55 @@ Phil can take the CFN template created by the admin team and use it to create th
 - PassRole is used by identities to pass this into CFN
 - This means that role is attached to the stack and used for any operations `rather than using the identities permission`
 
-![img](./imgs/CloudFormationStackRoles.webp)
+![img](./imgs/cloud-formation/CloudFormationStackRoles.webp)
+
+---
+
+## CloudFormation Init (cfn-init)
+
+For the CloudFormation if you use the `AWS::CloudFormation::Init` type to include `metadata` on an Amazon EC2 instance for the `cfn-init` helper script.
+
+- userdata defines a script of how to do changes in the system
+- cfn-init defines what state the system needs to be in
+
+Also, cfn-init is idempotent.
+
+- So, say you want to install a service through cfn-init and its alredy present, it wont install it again.
+- Or say a service needs to be started and its already running, then cfn-init wont perform any action.
+
+### AWS::CloudFormation::Init
+
+The configuration for `cfn-init` is stored in the template under `Metadata -> AWS::CloudFormation::Init`.
+
+- `cfn-init` is executed through UserData. it uses the configuration that we have defined under `Metadata -> AWS::CloudFormation::Init`.
+- also here we are using cfn-signal to indicate that the bootstraping is complete.
+
+![img](./imgs/cloud-formation/CloudFormationCFNINIT.webp)
+
+### Steps [incomplete - add about ConfigKeys]
+
+- Template is used to create the stack which creates an EC2 instance.
+- cfn-init is executed by the instance, along with other content in the UserData section.
+- variables used within cfn-init are replaced before UserData is passed to EC2 instance
+- cfn-init communicates with CFN to get the configuration
+
+**NOTE**: If you update the configuration in `Metadata -> AWS::CloudFormation::Init` and rerun the template, cfn-init isn't reapplied.
+
+---
+
+## CloudFormation cfn-hup
+
+`cfn-init` is run only once as part of bootstraping (user data). If `AWS::CloudFormation::Init` is updated, cfn-init isnt rerun during the UpdateStack API action.
+
+`cfn-hup` helper is a daemon that detects changes in resource metadata and runs user-specified actions when a change is detected.
+
+- This allows you to make configuration updates on your running Amazon EC2 instances through the UpdateStack API action.
+
+### Steps
+
+- A template's init configuration is changed
+- Post the change UpdateStack API action is called upon the stack to perform the stack update
+- cfn-hup running on the instance, detects the change configuration
+- For the change to be applied, cfn-hub calls cfn-init which uses the new configuration.
+
+![img](./imgs/cloud-formation/CloudFormationCFNHUP.webp)
