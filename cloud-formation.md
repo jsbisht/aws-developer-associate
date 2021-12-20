@@ -507,3 +507,380 @@ The configuration for `cfn-init` is stored in the template under `Metadata -> AW
 - For the change to be applied, cfn-hub calls cfn-init which uses the new configuration.
 
 ![img](./imgs/cloud-formation/CloudFormationCFNHUP.webp)
+
+---
+
+## CloudFormation ChangeSets
+
+Change sets allow you to preview how proposed changes to a stack might impact your running resources, for example, whether your changes will delete or replace any critical resources.
+
+- As part of the change set, you can review the changes that are gonna happen under the `JSON changes` section of the `Change Set`.
+- Only when you execute your changes the stack is updated
+- You can have multiple change sets at the same time. You can either select any one of them to be executed or delete any of the change set.
+
+---
+
+## CloudFormation Custom Resources
+
+Custom resources enable you to write custom provisioning logic in templates that AWS CloudFormation runs anytime you create, update (if you changed the custom resource), or delete stacks.
+
+- CFN doesnt support everything
+- Custom Resources let CFN integrate with anything it doesn't yet or doesnt natively support
+
+### How Custom Resources Work
+
+CFN begins the process of creating the custom resource by sending data to an endpoint that is defined by the user within the custom resource. This can be a `lambda function` or an `SNS topic`.
+
+Whenever a custom resource is created, updated or deleted, then CFN sends data to that custom resource in the form of event data.
+
+- Event data contains the details of operations that are happening with the custom resource
+- Lambda function is invoked with this data. Lambda then responds back with the data about that can be used by other resources in CFN.
+
+### Use Case
+
+Consider for example if you try to delete a bucket created with CFN containing object, it will not delete the bucket and result into an error.
+
+Or you can use Custom Resources to provision non-aws resources.
+
+![img](./imgs/CloudFormationCustomResources.webp)
+
+In the example above, when you create a bucket using custom resource
+
+- the stack will create an empty bucket and notify the lambda with data about the bucket creation
+- CustomLambda function will upload the objects that are required into the bucket and notify CFN that its done.
+- This will move the stack into CREATE_COMPLETE state
+- So, even if objects into the bucket are loaded externally, the stack will not be impacted.
+- When a delete stack operation happens in this case, instead of attempting to delete the bucket first, CFN will follow the reverse order of the creation.
+- So CFN will attempt to delete the Custom Resource i.e. CustomLambda function by sending it a event
+- Using the event data lambda will perform operations on the bucket, which here means clearing the bucket content
+- Once done it will respond back to CFN about completion
+- CFN will now proceed to deleting the bucket successfully
+
+---
+
+# Demo
+
+## 1. UserData
+
+```yaml
+Parameters:
+  LatestAmiId:
+    Description: "AMI for EC2"
+    Type: "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>"
+    Default: "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+  Message:
+    Description: "Message for HTML page"
+    Default: "Cats are the best"
+    Type: "String"
+Resources:
+  InstanceSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: Enable SSH and HTTP access via port 22 IPv4 & port 80 IPv4
+      SecurityGroupIngress:
+        - Description: "Allow SSH IPv4 IN"
+          IpProtocol: tcp
+          FromPort: "22"
+          ToPort: "22"
+          CidrIp: "0.0.0.0/0"
+        - Description: "Allow HTTP IPv4 IN"
+          IpProtocol: tcp
+          FromPort: "80"
+          ToPort: "80"
+          CidrIp: "0.0.0.0/0"
+  Bucket:
+    Type: "AWS::S3::Bucket"
+  Instance:
+    Type: "AWS::EC2::Instance"
+    Properties:
+      InstanceType: "t2.micro"
+      ImageId: !Ref "LatestAmiId"
+      SecurityGroupIds:
+        - !Ref InstanceSecurityGroup
+      Tags:
+        - Key: Name
+          Value: A4L-UserData Test
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          yum -y update
+          yum -y upgrade
+          # simulate some other processes here
+          sleep 300
+          # Continue
+          yum install -y httpd
+          systemctl enable httpd
+          systemctl start httpd
+          echo "<html><head><title>Amazing test page</title></head><body><h1><center>${Message}</center></h1></body></html>" > /var/www/html/index.html
+```
+
+If you re-run the stack template with a different parameter values which essentially will change the UserData (if its referring to the parameter), any instances created will be stopped and restarted. This update is called `Update With Disruption`.
+
+- But the `UserData` section will not be rerun, as UserData is applied one once when the instance is launched for the first time.
+- This is because the instance configuration is not updated when the stack is updated.
+
+**NOTE**: ${Message} will not be updated during rerun of the stack template, until you delete the stack and create a new one.
+
+---
+
+## 2. Userdata + cfn-signal
+
+```yaml
+Parameters:
+  LatestAmiId:
+    Description: "AMI for EC2"
+    Type: "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>"
+    Default: "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+  Message:
+    Description: "Message for HTML page"
+    Default: "Cats are the best"
+    Type: "String"
+Resources:
+  InstanceSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: Enable SSH and HTTP access via port 22 IPv4 & port 80 IPv4
+      SecurityGroupIngress:
+        - Description: "Allow SSH IPv4 IN"
+          IpProtocol: tcp
+          FromPort: "22"
+          ToPort: "22"
+          CidrIp: "0.0.0.0/0"
+        - Description: "Allow HTTP IPv4 IN"
+          IpProtocol: tcp
+          FromPort: "80"
+          ToPort: "80"
+          CidrIp: "0.0.0.0/0"
+  Bucket:
+    Type: "AWS::S3::Bucket"
+  Instance:
+    Type: "AWS::EC2::Instance"
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT15M
+    Properties:
+      InstanceType: "t2.micro"
+      ImageId: !Ref "LatestAmiId"
+      SecurityGroupIds:
+        - !Ref InstanceSecurityGroup
+      Tags:
+        - Key: Name
+          Value: A4L-UserData Test
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          yum -y update
+          yum -y upgrade
+          # simulate some other processes here
+          sleep 300
+          # Continue
+          yum install -y httpd
+          systemctl enable httpd
+          systemctl start httpd
+          echo "<html><head><title>Amazing test page</title></head><body><h1><center>${Message}</center></h1></body></html>" > /var/www/html/index.html
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource Instance --region ${AWS::Region}
+```
+
+Notice the `cfn-signal` command at the end of `UserData`. Once the bootstrapping is complete. This command will run and notifies CFN the end of bootstrapping process.
+
+- In this case the Instance will not move into `CREATE_COMPLETE` state until the signal is received.
+
+### log files
+
+Under "/var/log"
+
+- `cloud-init-output.log` - contains all the commands that are run in the UserData component as part the bootstraping process and **their outputs**
+
+**NOTE**: ${Message} will not be updated during rerun of the stack template, until you delete the stack and create a new one.
+
+---
+
+## 3. cfn-init + cfn-signal
+
+```yaml
+Parameters:
+  LatestAmiId:
+    Description: "AMI for EC2"
+    Type: "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>"
+    Default: "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+  Message:
+    Description: "Message for HTML page"
+    Default: "Cats are the best"
+    Type: "String"
+Resources:
+  InstanceSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: Enable SSH and HTTP access via port 22 IPv4 & port 80 IPv4
+      SecurityGroupIngress:
+        - Description: "Allow SSH IPv4 IN"
+          IpProtocol: tcp
+          FromPort: "22"
+          ToPort: "22"
+          CidrIp: "0.0.0.0/0"
+        - Description: "Allow HTTP IPv4 IN"
+          IpProtocol: tcp
+          FromPort: "80"
+          ToPort: "80"
+          CidrIp: "0.0.0.0/0"
+  Bucket:
+    Type: "AWS::S3::Bucket"
+  Instance:
+    Type: "AWS::EC2::Instance"
+    Metadata:
+      "AWS::CloudFormation::Init":
+        config:
+          packages:
+            yum:
+              httpd: []
+          files:
+            /var/www/html/index.html:
+              content: !Sub |
+                <html><head><title>Amazing test page</title></head><body><h1><center>${Message}</center></h1></body></html>
+          commands:
+            simulatebootstrap:
+              command: "sleep 300"
+          services:
+            sysvinit:
+              httpd:
+                enabled: "true"
+                ensureRunning: "true"
+                files:
+                  - "/var/www/html/index.html"
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT15M
+    Properties:
+      InstanceType: "t2.micro"
+      ImageId: !Ref "LatestAmiId"
+      SecurityGroupIds:
+        - !Ref InstanceSecurityGroup
+      Tags:
+        - Key: Name
+          Value: A4L-UserData Test
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackId} --resource Instance --region ${AWS::Region}
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource Instance --region ${AWS::Region}
+```
+
+Here the `cfn-init` will use the **config directive** under `AWS::CloudFormation::Init` to reach the desired state:
+
+```sh
+cfn-init -v --stack ${AWS::StackId} --resource Instance --region ${AWS::Region}
+```
+
+### log files
+
+Under "/var/log"
+
+- `cloud-init-output.log` - contains all the commands that are run in the UserData component as part the bootstraping process without details
+- `cfn-init-cmd.log` - contains the overview of cfn-init command and its execution
+- `cfn-init.log` - contains the detailed breakdown of cfn-init command and its execution
+
+**NOTE**: ${Message} will not be updated during rerun of the stack template, until you delete the stack and create a new one.
+
+---
+
+## 4. cfn-init + cfn-signal + cfn-hup
+
+```yaml
+Parameters:
+  LatestAmiId:
+    Description: "AMI for EC2"
+    Type: "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>"
+    Default: "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+  Message:
+    Description: "Message for HTML page"
+    Default: "Cats are the best"
+    Type: "String"
+Resources:
+  InstanceSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: Enable SSH and HTTP access via port 22 IPv4 & port 80 IPv4
+      SecurityGroupIngress:
+        - Description: "Allow SSH IPv4 IN"
+          IpProtocol: tcp
+          FromPort: "22"
+          ToPort: "22"
+          CidrIp: "0.0.0.0/0"
+        - Description: "Allow HTTP IPv4 IN"
+          IpProtocol: tcp
+          FromPort: "80"
+          ToPort: "80"
+          CidrIp: "0.0.0.0/0"
+  Bucket:
+    Type: "AWS::S3::Bucket"
+  Instance:
+    Type: "AWS::EC2::Instance"
+    Metadata:
+      "AWS::CloudFormation::Init":
+        config:
+          packages:
+            yum:
+              httpd: []
+          files:
+            /etc/cfn/cfn-hup.conf:
+              content: !Sub |
+                [main]
+                stack=${AWS::StackName}
+                region=${AWS::Region}
+                interval=1
+                verbose=true
+              mode: "000400"
+              owner: "root"
+              group: "root"
+            /etc/cfn/hooks.d/cfn-auto-reloader.conf:
+              content: !Sub |
+                [cfn-auto-reloader-hook]
+                triggers=post.update
+                path=Resources.Instance.Metadata.AWS::CloudFormation::Init
+                action=/opt/aws/bin/cfn-init -v --stack ${AWS::StackId} --resource Instance --region ${AWS::Region}
+                runas=root
+              mode: "000400"
+              owner: "root"
+              group: "root"
+            /var/www/html/index.html:
+              content: !Sub |
+                <html><head><title>Amazing test page</title></head><body><h1><center>${Message}</center></h1></body></html>
+          commands:
+            simulatebootstrap:
+              command: "sleep 300"
+          services:
+            sysvinit:
+              cfn-hup:
+                enabled: "true"
+                ensureRunning: "true"
+                files:
+                  - /etc/cfn/cfn-hup.conf
+                  - /etc/cfn/hooks.d/cfn-auto-reloader.conf
+              httpd:
+                enabled: "true"
+                ensureRunning: "true"
+                files:
+                  - "/var/www/html/index.html"
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT15M
+    Properties:
+      InstanceType: "t2.micro"
+      ImageId: !Ref "LatestAmiId"
+      SecurityGroupIds:
+        - !Ref InstanceSecurityGroup
+      Tags:
+        - Key: Name
+          Value: A4L-UserData Test
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackId} --resource Instance --region ${AWS::Region}
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource Instance --region ${AWS::Region}
+```
+
+If we run this template to create the stack for the first time, cfn-hub will start to monitor for change in `AWS::CloudFormation::Init`.
+
+- This change will include any change in parameter, that is referenced within `AWS::CloudFormation::Init` section.
+
+So, once we rerun the stack creation after updating the parameter `Message`, cfn-hub will detect this change and re-run `cfn-init` eventually updating the file `index.html` will references `Message` parameter.
