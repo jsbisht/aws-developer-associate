@@ -527,6 +527,21 @@ Custom resources enable you to write custom provisioning logic in templates that
 - CFN doesnt support everything
 - Custom Resources let CFN integrate with anything it doesn't yet or doesnt natively support
 
+**NOTE**: Custom resources can be idenfified in the template using `Type: "Custom:<resource-name>`.
+
+```yaml
+Resources:
+  copyanimalpics:
+    Type: "Custom::S3Objects"
+    Properties:
+      ServiceToken: !GetAtt CopyS3ObjectsFunction.Arn
+      SourceBucket: "cl-randomstuffforlessons"
+      SourcePrefix: "customresource"
+      Bucket: !Ref animalpics
+```
+
+Note the implicit dependencies (eg. CopyS3ObjectsFunction.Arn and animalpics) in the template unlike what we specify using `DependsOn`.
+
 ### How Custom Resources Work
 
 CFN begins the process of creating the custom resource by sending data to an endpoint that is defined by the user within the custom resource. This can be a `lambda function` or an `SNS topic`.
@@ -546,14 +561,14 @@ Or you can use Custom Resources to provision non-aws resources.
 
 In the example above, when you create a bucket using custom resource
 
-- the stack will create an empty bucket and notify the lambda with data about the bucket creation
-- CustomLambda function will upload the objects that are required into the bucket and notify CFN that its done.
+- the stack will create an empty bucket and notify the lambda with an event about the bucket creation
+- CustomLambda function will upload the objects that are required into the bucket and signal CFN that its done.
 - This will move the stack into CREATE_COMPLETE state
 - So, even if objects into the bucket are loaded externally, the stack will not be impacted.
 - When a delete stack operation happens in this case, instead of attempting to delete the bucket first, CFN will follow the reverse order of the creation.
 - So CFN will attempt to delete the Custom Resource i.e. CustomLambda function by sending it a event
 - Using the event data lambda will perform operations on the bucket, which here means clearing the bucket content
-- Once done it will respond back to CFN about completion
+- Once done it will signal CFN about completion
 - CFN will now proceed to deleting the bucket successfully
 
 ---
