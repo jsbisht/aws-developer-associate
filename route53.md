@@ -97,3 +97,88 @@ Split-View allows us to create a Public Hosted Zone, sharing subset of records o
 - So, those records not present in private hosted one are not accessible from the internet.
 
 ![img](./imgs/route53/R53SplitView.webp)
+
+---
+
+## Route53 CNAME vs ALIAS
+
+A record maps a NAME to an IP Address.
+
+### CNAME record
+
+CNAME maps a NAME to another NAME.
+
+CNAME is invalid for naked/apex (netflix.com) as per DNS standard.
+
+Many AWS Services like ELB use a DNS name instead of an IP address.
+
+- Using CNAME for naked/apex like `netflix.com` here wouldn't be supported
+- Using CNAME for normal DNS record like `www.netflix.com` is supported
+
+### ALIAS
+
+ALIAS records maps a NAME to an AWS Resource.
+
+ALIAS records can be used for both naked/apex and normal records.
+
+- There is no charge for using ALIAS to point to AWS Resource.
+- Use this as the default for doing AWS resource mapping.
+
+**NOTE**: CNAME can be used to map NAME to an AWS resource for non nakes/apex record.
+
+ALIAS is actually a subtype.
+
+- So match the record type to the type of the record you are pointing to.
+
+If the AWS resource provides an A record, then we need to use `A record ALIAS`
+
+if the AWS resource provides an CNAME record, then we need to use `CNAMe record ALIAS`
+
+**NOTE**: ALIAS record is outside DNS starndard and is only implemented within AWS. `So alias record can only be used if Route53 is hosting the domain`.
+
+---
+
+# Routing Types
+
+## Health Checks
+
+Health check is seperate from, but used by records within Route53.
+
+Health checkers are located globally.
+
+Health check can be done on AWS targets as well resources over the internet.
+
+- Checks run every 30 seconds
+- Check interval can be reduced to 10 seconds for additonal cost
+- **TCP Check**: It can be a TCP check where `the connection needs to be established within 10 seconds`
+- **HTTP(S) check**: It can be HTTP check where the `TCP connected must be established within 4 seconds` and it should return a response in 2xx or 3xx range.
+- **HTTP(S) check with string matching**: Along with the HTTP check the health checker expects a response within 2 second with response body containing an exact string match (in the first 5120 bytes). `This is the most accurate health check`.
+
+### Types of Checks
+
+1. Endpoint Checks
+2. CloudWatch Alarms
+3. Checks of Checks (Calculated)
+
+Health Checks allow only healthy records (most of the time) to be returned for the DNS queries.
+
+---
+
+## Simple Routing
+
+Simple routing doesnt support `health checks`.
+
+All values are returned for a record when queried. It simply chooses one and to connect to.
+
+![img](./imgs/route53/R53Simple.webp)
+
+---
+
+## Failover Routing
+
+If the primary record fails its health check, the secondary value of the same name is returned. In this case the secondary value is the S3 bucket.
+
+![img](./imgs/route53/R53Failover.webp)
+
+[Demo: Failover Routing](https://learn.cantrill.io/courses/1101194/lectures/27876488)
+[Demo: Simple Routing](https://learn.cantrill.io/courses/1101194/lectures/30416859)
