@@ -10,6 +10,7 @@
 - [Advanced EC2](./ec2-plus.md)
 - [CloudFormation](./cloud-formation.md)
 - [Route 53](./route53.md)
+- [CloudFront](./cloud-front.md)
 - [Databases (SQL)]
 - [Advanced Storage]
 - [Scaling and Load Balancers]
