@@ -138,8 +138,6 @@ if the AWS resource provides an CNAME record, then we need to use `CNAMe record 
 
 ---
 
-# Routing Types
-
 ## Health Checks
 
 Health check is seperate from, but used by records within Route53.
@@ -164,7 +162,9 @@ Health Checks allow only healthy records (most of the time) to be returned for t
 
 ---
 
-## Simple Routing
+## Routing Types
+
+### Simple Routing
 
 Simple routing doesnt support `health checks`.
 
@@ -172,9 +172,7 @@ All values are returned for a record when queried. It simply chooses one and to 
 
 ![img](./imgs/route53/R53Simple.webp)
 
----
-
-## Failover Routing
+### Failover Routing
 
 If the primary record fails its health check, the secondary value of the same name is returned. In this case the secondary value is the S3 bucket.
 
@@ -182,3 +180,14 @@ If the primary record fails its health check, the secondary value of the same na
 
 [Demo: Failover Routing](https://learn.cantrill.io/courses/1101194/lectures/27876488)
 [Demo: Simple Routing](https://learn.cantrill.io/courses/1101194/lectures/30416859)
+
+### Multi Value Routing
+
+Multivalue answer routing lets you configure Amazon Route 53 to return multiple values, such as IP addresses for your web servers, in response to DNS queries.
+
+- You can specify multiple values for almost any record, but multivalue answer routing also lets you check the health of each resource, so Route 53 returns only values for healthy resources
+- This routing type is used to increase availability
+- It is not a replacement for Load Balancer
+- This is used over Failover Routing when you have multiple resources that can serve the request
+
+![img](./imgs/route53/R53MultiValue.webp)
