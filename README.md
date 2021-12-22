@@ -9,3 +9,13 @@
 - [Elastic Compute Service (ECS)](./ecs.md)
 - [Advanced EC2](./ec2-plus.md)
 - [CloudFormation](./cloud-formation.md)
+- [Route 53](./route53.md)
+- [Databases (SQL)]
+- [Advanced Storage]
+- [Scaling and Load Balancers]
+- [Developer Tools]
+- [Event Driven and Serverless]
+- [Lambda]
+- [API Gateway]
+- [Databases (NoSQL)]
+- [Elastic Beanstalk]
