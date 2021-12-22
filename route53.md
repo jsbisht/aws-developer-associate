@@ -191,3 +191,52 @@ Multivalue answer routing lets you configure Amazon Route 53 to return multiple 
 - This is used over Failover Routing when you have multiple resources that can serve the request
 
 ![img](./imgs/route53/R53MultiValue.webp)
+
+### Weighted Routing
+
+Weighted routing lets you associate multiple resources with a single domain name and choose how much traffic is routed to each resource. This can be useful for a variety of purposes:
+
+- simple load balancing and
+- testing new versions of software
+
+If this is combined with health check unhealthy records are skipped.
+
+![img](./imgs/route53/R53Weighted.webp)
+
+### Latency Routing
+
+If your application is hosted in multiple AWS Regions, you can improve performance for your users by serving their requests from the AWS Region that provides the lowest latency.
+
+- This routing allows `one record with same name in each region`
+
+If this is combined with health check it checks if the region provides lowest latency as well as if its healthy.
+
+![img](./imgs/route53/R53Latency.webp)
+
+### Geolocation Routing
+
+Geolocation routing lets you choose the resources that serve your traffic based on the geographic location of your users, meaning the location that DNS queries originate from.
+
+- Records are tagged with location that can be a "country", "continent" or "default"
+- In US records can additionally be tagged by "state"
+- With "default" either most specific record is returned or "NO ANSWER"
+
+**NOTE**: Geolocation `returns relavant record` as per the users geographic location `not the closest record`.
+
+- If there is not "country" specific record, then "continent" record is returned.
+- If both "country" and "continent" doesnt exist then the fallback it to "default" record.
+
+![img](./imgs/route53/R53Geolocation.webp)
+
+### Geoproximity Routing
+
+Geoproximity routing lets Amazon Route 53 route traffic to your resources based on the geographic location of your users and your resources.
+
+- Records can be tagged with an AWS Region
+
+Bias
+
+- Rather than using the actual physical distance, you can also optionally choose to route more traffic or less to a given resource by specifying a value, known as a bias.
+- A bias expands or shrinks the size of the geographic region from which traffic is routed to a resource.
+
+![img](./imgs/route53/R53GeoProximity.webp)
