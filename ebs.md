@@ -118,7 +118,7 @@ You can enable account wide encryption of EBS Volumes using default Master Key o
 - Any EBS volume created after this setting is enabled will be encrypted using this setting.
 - You can override the key to be used while creating a new EBS volume by choosing a different encryption key.
 
-**NOTE**: This setting has to be done for each region individually.
+> This setting has to be done for each region individually.
 
 ### EBS Snapshots
 
@@ -130,7 +130,7 @@ If a snapshot is made of an encrypted EBS volume,
 
 Everytime you create a new EBS volume from scratch, it creates a new data encryption key.
 
-**NOTE**: While restoring from the snapshot to a new EBS volume, you can choose a different Master Key or keep it same as the snapshot.
+> While restoring from the snapshot to a new EBS volume, you can choose a different Master Key or keep it same as the snapshot.
 
 ### Considerations
 
@@ -254,7 +254,7 @@ This is the limit of throughput between EBS volumes combined to one single EC2 i
 - Suitable when you need to read large blocks of data rather than random access of data
 - Big data, data warehouse and log processing
 
-**NOTE**: Cannot be a boot volume.
+> Cannot be a boot volume.
 
 ### Volume Size
 
@@ -290,7 +290,7 @@ Highest storage performance in AWS.
 
 They are included in instance price.
 
-**NOTE**: They can be attached ONLY at launch. Cannot be attached later.
+> They can be attached ONLY at launch. Cannot be attached later.
 
 - An instance store consists of one or more instance store volumes exposed as block devices.
 - The size of an instance store as well as the number of devices available varies by instance type.

@@ -2,9 +2,9 @@
 
 ## Cloudfront Architecture
 
-**NOTE**: Cloudfront integrates with ACM (AWS Certificate Manager). You can use SSL certificates with Cloudfront.
+> Cloudfront integrates with ACM (AWS Certificate Manager). You can use SSL certificates with Cloudfront.
 
-**NOTE**: Uploads directly go to the origin. Only downloads are served through CloudFront Edge locations.
+> Uploads directly go to the origin. Only downloads are served through CloudFront Edge locations.
 
 - Cloudfront does not write caching. Only read requests are cached.
 
@@ -146,7 +146,7 @@ Note that on the step 4 here, object had been deleted on the origin but was serv
 - You can set `Minimum TTL` and `Maximum TTL` values that act as limiter on the per object TTL settings
 - TTL per object is set via `Cache-Control max-age`, `Cache-Control s-maxage` and `Expires` origin header
 
-**NOTE**: If the per object TTL is below Minimum TTL, then minimum TTL applies instead. And if its above Maximum TTL, then maximum TTL applies.
+> If the per object TTL is below Minimum TTL, then minimum TTL applies instead. And if its above Maximum TTL, then maximum TTL applies.
 
 For custom origin, headers are supplied by application or web server on the origin.
 
@@ -163,7 +163,7 @@ Patterns such as:
 
 are used to match objects that needs to be invalidated.
 
-**NOTE**: Irrespective of how many objects are matched, the price for performing invalidation remains the same.
+> Irrespective of how many objects are matched, the price for performing invalidation remains the same.
 
 So, cache invalidation should only be used in case you want to correct mistakes. And not perform these invalidations as a regular process.
 
@@ -185,11 +185,11 @@ You can use this to specify different CNAMES you will use to access cloudfront d
 - You can verify the ownership using SSL certificate that has matching cloudfront distribution name
 - You can either generate or import a SSL certificate from AWS Certificate Manager (ACM)
 
-**NOTE**: ACM is a regional service and you need to add the certificate in the same region as the service you are using.
+> ACM is a regional service and you need to add the certificate in the same region as the service you are using.
 
 Say, a load balancer in asia-south-1a need ACM from the same region.
 
-**NOTE**: Cloudfront is a global service and needs the certificate to be always added in **`us-east-1`** (Northern Virginia).
+> Cloudfront is a global service and needs the certificate to be always added in **`us-east-1`** (Northern Virginia).
 
 ### Two SSL Connections
 
@@ -205,7 +205,7 @@ Viewer => Cloudfront and Cloudfront => Origin
 - ALB can use ACM to manage certificate generation and management
 - With Custom Origin EC2 or On-Premise servers we need to apply certificate manually
 
-**NOTE**: For all the cases, the certificate needs to match the DNS name of the origin.
+> For all the cases, the certificate needs to match the DNS name of the origin.
 
 From the viewer side, the certificate applied to Cloudfront needs to match the DNS name of whatever your customer are using to access Cloudfront.
 
@@ -235,7 +235,7 @@ With SNI a server hosting multiple domain (at a single IP address where each use
 
 - different cert for each custom domain is required to prove its identity
 
-**NOTE**: Older browsers don't support SNI. Cloudfront allows us to use dedicated IP's for each custom domain in such cases (at an extra cost. $600 monthly).
+> Older browsers don't support SNI. Cloudfront allows us to use dedicated IP's for each custom domain in such cases (at an extra cost. $600 monthly).
 
 ---
 
@@ -314,7 +314,7 @@ Here every request received on cloudfont is forwarded to API Gateway which forwa
 - The Lambda examines if the request is for private or public content
 - If the application and user accessing the content is validated, a signed cookie is retured to the application
 
-**NOTE**: Signed cookie can only be generated if the AWS accont is listed a the TRUSTED SIGNER for the Cloudfront distribution
+> Signed cookie can only be generated if the AWS accont is listed a the TRUSTED SIGNER for the Cloudfront distribution
 
 Red line here represent signed cookie based access.
 
@@ -336,7 +336,7 @@ CloudFront Geo Restriction allows for White or Black list restrictions based on 
 - It works using a GeoIP database that claims 99.8% plus accuracy
 - Applies to the entire distribution to restrict a request only based on geographic location
 
-**NOTE**: Edge location only gets a country code from the GeoIP database
+> Edge location only gets a country code from the GeoIP database
 
 ![img](imgs/cloud-front/CloudFrontGeoRestriction.webp)
 
@@ -432,6 +432,6 @@ ACM is regional service
 - Cloudfront is an `EXCEPTOIN`. It runs only from `us-east-1`.
 - Certificate generated in any other region cannot be used with Cloudfront
 
-**NOTE**: ACM deploys the certificates to the distribution. And then the `distribution moves certificates to edge locations`.
+> ACM deploys the certificates to the distribution. And then the `distribution moves certificates to edge locations`.
 
-**NOTE**: S3 does not use ACM for any of its certificates
+> S3 does not use ACM for any of its certificates

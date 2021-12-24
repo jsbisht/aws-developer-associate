@@ -20,3 +20,7 @@
 - [API Gateway]
 - [Databases (NoSQL)]
 - [Elastic Beanstalk]
+
+---
+
+Create hands-on exercises covering all the key topics

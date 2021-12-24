@@ -272,7 +272,7 @@ Amazon ECS supports the following task placement strategies.
 
 `spread` - Place tasks evenly based on the specified attribute.
 
-**NOTE**: You can use task placement constraints to prevent tasks from launching on cluster instances with certain properties.
+> You can use task placement constraints to prevent tasks from launching on cluster instances with certain properties.
 
 ## CLI
 
@@ -354,7 +354,7 @@ The company you work for has a PHP application which is growing quickly and also
 
 CPU, network, and disk activity are metrics that are visible to the underlying host for an instance.
 
-**NOTE**: Because memory is allocated in a single block to an instance and is managed by the guest OS, the underlying host does not have visibility into consumption. This metric would have to be delivered to CloudWatch as a custom metric by using the agent.
+> Because memory is allocated in a single block to an instance and is managed by the guest OS, the underlying host does not have visibility into consumption. This metric would have to be delivered to CloudWatch as a custom metric by using the agent.
 
 ---
 
@@ -817,7 +817,7 @@ How would you migrate an Amazon Relational Database Service (Amazon RDS) layer b
 - Add the Amazon RDS layer to the second stack.
 - Remove the connection custom JSON.
 
-**NOTE**: you cannot associate a single Amazon RDS database instance with multiple stacks at the same time.
+> you cannot associate a single Amazon RDS database instance with multiple stacks at the same time.
 
 ---
 
@@ -1187,12 +1187,12 @@ Uses an agent based method for deployment on servers, whether they are `EC2 inst
 
 - The CodeDeploy agent is not required for deployments that target the `serverless lambda servers`.
 
-**NOTE**: When we create an instance
+> When we create an instance
 
 - We add bash script to install CodeDeploy agent.
 - We add SSH and HTTP access to the newly created security group.
 
-**NOTE**: When we create a CodeDeploy setup
+> When we create a CodeDeploy setup
 
 - CodeDeploy requires a service role. Here we give `AWSCodeDeployRole` under the policy.
 
@@ -1476,7 +1476,7 @@ Each type of identity has a role that goes along with it. Roles have policies at
 - The first part is that you application needs to have the user sign in with Cognito user pools and that can take place using either the user pool itself, a social sign-in, your SAML-backed authentication service
 - At this stage, an Identity Token is sent by the IDP back to the Cognito user Pool.
 - Now Cognito does not store the credentials by the IDP or forward this to your mobile app, instead, the IDP token will be normalized into a standard token, called a `Cognito User Pool Token, or CUP token` and this will be used and stored by Cognito.
-  - **NOTE**: This essentially means that it doesn’t matter if the user authenticated via an account in the User Pool, or federated access, all tokens will be standardized
+  - > This essentially means that it doesn’t matter if the user authenticated via an account in the User Pool, or federated access, all tokens will be standardized
 - Now some services do not allow you to use the CUP tokens for authentication. You might have to use the Identity Pool to authenticate.
   - The CUP Token can be sent to the Identity Pool, where an `STS Token (Security Token Service)` will be created based off of your CUP token, and this will be sent back to your application.
 - With these AWS credentials, your application will now be allowed to call upon those other AWS services.
@@ -1617,7 +1617,7 @@ When Route 53 receives a query it chooses a record based on the routing policy, 
 - Unhealthy records are not considered.
 - If you do not associate a health check with a record, Route 53 treats those records as always healthy.
 
-**NOTE**: You can use the list of recommended health checkers by region or customize the list to the regions specific to your business.
+> You can use the list of recommended health checkers by region or customize the list to the regions specific to your business.
 
 ### Endpoint Health Check
 
@@ -1651,7 +1651,7 @@ With Simple routing an A record is associated with one or more IP addresses.
 
 - A random selection will choose which IP to use.
 
-**NOTE**: It is important to note that Simple Routing policies do not support health checks. All other routing policies do.
+> It is important to note that Simple Routing policies do not support health checks. All other routing policies do.
 
 ### Weighted routing policy
 
@@ -1687,7 +1687,7 @@ You define multiple records with the same name and assign a region to each recor
 
 AWS maintains a database of latency between the general location of users and the regions tagged in DNS records.
 
-**NOTE**: This may not always be the closest resource, especially if the closest resource is saturated. And this looks for a healthy record.
+> This may not always be the closest resource, especially if the closest resource is saturated. And this looks for a healthy record.
 
 ### Multi value Answer routing policy
 

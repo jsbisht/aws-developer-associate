@@ -29,7 +29,7 @@ NOTE: Logging for the scripts being run will be part of either `cloud-init.log` 
 
 NOTE: When using CloudFormation, the UserData can be passed as well (but needs to be in Base 64 format).
 
-**NOTE**: Commands specified in user data will only run when the instance is provisioned. `It wont be run every time the instance moves from STOPPED to RUNNING`.
+> Commands specified in user data will only run when the instance is provisioned. `It wont be run every time the instance moves from STOPPED to RUNNING`.
 
 ---
 
@@ -274,7 +274,7 @@ packs instances close together inside an Availability Zone. This strategy enable
 - All instances are have direct connections to each other and can have a bandwidth of **10 Gbps** when compared to usual 5Gbps.
 - Gives higher packets per second (PPS)
 
-**NOTE**: If the hardware fails, the entire cluster might fail.
+> If the hardware fails, the entire cluster might fail.
 
 ---
 
@@ -287,7 +287,7 @@ strictly places a small group of instances `across distinct underlying hardware`
 - Each has their own power supply and networking hardware.
 - Useful for creating several mirrors of an application.
 
-**NOTE**: Limits 7 instances per AZ. This cannot be increased. Dedicated instance or host are not supported in this setup.
+> Limits 7 instances per AZ. This cannot be increased. Dedicated instance or host are not supported in this setup.
 
 ---
 
@@ -302,11 +302,11 @@ spreads your instances across _logical partitions_ such that groups of `instance
 
 Useful to create huge scale parallel processing groups having multiple instances in each group, which each group is isolated from each other.
 
-**NOTE**: Topology aware applications like `HDFS, HBase, and Cassandra` can make use of the distributed nature of instance placement. In such setup, impact of failure can be contained to part of an application.
+> Topology aware applications like `HDFS, HBase, and Cassandra` can make use of the distributed nature of instance placement. In such setup, impact of failure can be contained to part of an application.
 
-**NOTE**: You can choose how many instances to launch in each group.
+> You can choose how many instances to launch in each group.
 
-**NOTE**: This is not supported on dedicated hosts.
+> This is not supported on dedicated hosts.
 
 ---
 

@@ -391,11 +391,11 @@ If we are using NACLs we will need one for the INBOUND and the OUTBOUND
 | 110      | Custom TCP       | TCP (6)  | 1024 - 65635 | 0.0.0.0/0 | ALLOW      |
 | \*       | All IPv4 traffic | All      | All          | 0.0.0.0/0 | DENY       |
 
-**NOTE**: `1024 - 65635` is the emphemeral port range. Using this range isnt secure but using stateless NACLs this is the only way.
+> `1024 - 65635` is the emphemeral port range. Using this range isnt secure but using stateless NACLs this is the only way.
 
 Rule (number) between INBOUND and OUTBOUND tables are not affected by each other.
 
-**NOTE**: If DENY rule matches first, then ALLOW rule will never get processsed
+> If DENY rule matches first, then ALLOW rule will never get processsed
 
 ## Default NACL
 
@@ -562,7 +562,7 @@ Consider a packet from instance `i-01` being sent with a destination ip `1.3.3.7
 - Post this, NAT Gateway updates the packet's source as the public IP of the NAT Gateway and the destination as `1.3.3.7`.
 - As the destination is outside the VPC, the default route is used by the VPC Router, which forwards this packet to Internet Gateway.
 
-**NOTE**: The public IP used by NAT Gateway isnt real one and Internet Gateway translates IP of NAT Gateway to real public IP.
+> The public IP used by NAT Gateway isnt real one and Internet Gateway translates IP of NAT Gateway to real public IP.
 
 ## Considerations
 
@@ -595,7 +595,7 @@ IPv6
 - `::/0` route with Internet Gateway will give the instance INBOUND and OUTBOUND connectivity `subject to NACL or Security Groups`
 - `::/0` route with Egress-Only Internet Gateway will give the instance OUTBOUND only connectivity `subject to NACL or Security Groups`
 
-**NOTE**: NAT Gateway only use NACL and dont use Security Group
+> NAT Gateway only use NACL and dont use Security Group
 
 ## NAT Gateway vs NAT Instance
 
