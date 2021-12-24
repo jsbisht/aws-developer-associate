@@ -403,3 +403,35 @@ Accessing the request body
 
 - Using a request trigger to read an HTML form
 - Using a request trigger to modify an HTML form
+
+---
+
+## AWS Certificate Manager (ACM)
+
+AWS Certificate Manager is a service that lets you easily provision, manage, and deploy `public and private Secure Sockets Layer/Transport Layer Security (SSL/TLS) certificates` for use with AWS services and your internal connected resources
+
+- ACM lets you run a public or private certificate authority (CA)
+- Private CA: Appliation needs to trust your private CA
+- Public CA: Browsers trust a list of providers, which trust other providers
+
+ACM can generate or import certificate
+
+- If its generated, it can be automatically renewed
+- If it imported, it needs to manually renewed
+
+Certificates can only be deployed to supported AWS services
+
+- It can be ELBs or Cloudfront
+- EC2 is not supported (because a root user will have access to those certificates and they can be misused)
+
+ACM is regional service
+
+- Certificates can only be used in the region they were imported or generated in
+- Certificates cannot leave the region they were imported or generated in
+- An ELB in `ap-southeast-2` needs to use a certificate from ACM in `ap-southeast-2` only
+- Cloudfront is an `EXCEPTOIN`. It runs only from `us-east-1`.
+- Certificate generated in any other region cannot be used with Cloudfront
+
+**NOTE**: ACM deploys the certificates to the distribution. And then the `distribution moves certificates to edge locations`.
+
+**NOTE**: S3 does not use ACM for any of its certificates
