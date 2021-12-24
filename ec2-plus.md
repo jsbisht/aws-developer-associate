@@ -12,7 +12,7 @@ This could perform some software installs and post install configs.
 
 Bootstrapping is done using user data - accessed via the meta data service. The following gives the user data part of the instance meta data. It logs the user data that was passed to the instance.
 
-> http://169.254.169.254/latest/user-data
+    http://169.254.169.254/latest/user-data
 
 Anything you pass in is executed by the instance OS. `It is excecuted only once on launch`!
 
@@ -23,13 +23,13 @@ Anything you pass in is executed by the instance OS. `It is excecuted only once 
 
 EC2 doesn't validate the user data. You can tell EC2 to pass in trash data and the data will be passed. The OS needs to understand the user data.
 
-NOTE: This is the part of `3: Configure Instance -> Advanced Details -> User Data` when you use launch an EC2 instance wizard.
+NOTE: This is the part of `3: Configure Instance - Advanced Details - User Data` when you use launch an EC2 instance wizard.
 
 NOTE: Logging for the scripts being run will be part of either `cloud-init.log` or `cloud-init-output.log`.
 
 NOTE: When using CloudFormation, the UserData can be passed as well (but needs to be in Base 64 format).
 
-> Commands specified in user data will only run when the instance is provisioned. `It wont be run every time the instance moves from STOPPED to RUNNING`.
+    Commands specified in user data will only run when the instance is provisioned. `It wont be run every time the instance moves from STOPPED to RUNNING`.
 
 ---
 
@@ -50,7 +50,7 @@ Allowing a service to assume a role grants the service the permissions that role
 
 EC2 Instance Role allows anything running within that service permission that are attached to EC2 instance role.
 
-NOTE: For a given instance in the EC2 instances list select "Instance -> Security -> Modify IAM Role"
+NOTE: For a given instance in the EC2 instances list select "Instance - Security - Modify IAM Role"
 
 ---
 
@@ -68,7 +68,7 @@ EC2 and the Secure Token Service (STS) ensure the credentials never expire.
 
 To check the security credentails in use for a given EC2 instance:
 
-> > http://169.254.169.254/latest/meta-data/iam/security-credentials/ExampleInstanceRole
+        http://169.254.169.254/latest/meta-data/iam/security-credentials/ExampleInstanceRole
 
 Key facts
 
@@ -158,15 +158,15 @@ Value (eg. `dbadmin`)
 
 To get a single parameter
 
-> aws ssm get-paramters --names /wordpress/db-user
+    aws ssm get-paramters --names /wordpress/db-user
 
 To get all the parameter inside a hierarchy
 
-> aws ssm get-paramters-by-path --names /wordpress/
+    aws ssm get-paramters-by-path --names /wordpress/
 
 To get all the parameter with unencrypted values
 
-> aws ssm get-paramters-by-path --names /wordpress/ --with-decryption
+    aws ssm get-paramters-by-path --names /wordpress/ --with-decryption
 
 (Decryption requires permission to access parameter store and permission for the CMK from KMS used to encrypt the data)
 
@@ -210,31 +210,31 @@ We can use parameter store to capture the configuration for the CW agent.
 
 Wizard is intitiated through CLI using
 
-> sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-config-wizard
+    sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-config-wizard
 
 Log file path
 
-> /var/log/secure
-> group name: secure
+    /var/log/secure
+    group name: secure
 
-> /var/log/httpd/access_log
-> group name: access_log
+    /var/log/httpd/access_log
+    group name: access_log
 
-> /var/log/httpd/error_log
-> group name: error_log
+    /var/log/httpd/error_log
+    group name: error_log
 
 Config post the wizard config is stored in following file and stored in SSM
 
-> /opt/aws/amazon-cloudwatch-agent/bin/config.json
+    /opt/aws/amazon-cloudwatch-agent/bin/config.json
 
 Parameter store name
 
-> AmazonCloudWatch-linux
+    AmazonCloudWatch-linux
 
 Which AWS credentials to use to send json config to parameter store
 
-> 1. ASIAXXXXXXXXXXX (From SDK) [Default]
-> 2. Other
+    1. ASIAXXXXXXXXXXX (From SDK) [Default]
+    2. Other
 
 The wizard create a paramter store `AmazonCloudWatch-linux` which will be store the configuration to be used to monitor EC2 metrics.
 
@@ -242,8 +242,8 @@ The wizard create a paramter store `AmazonCloudWatch-linux` which will be store 
 
 CloudWatch Agent expects a system software called `collectd` to be installed
 
-> sudo mkdir -p /usr/share/collectd/
-> sudo touch /usr/share/collectd/types.db
+    sudo mkdir -p /usr/share/collectd/
+    sudo touch /usr/share/collectd/types.db
 
 Now we start the CloudWatch Agent and provide it with config stored inside the parameter store. The agent download the configuration and configures itself as per that configuration.
 
@@ -251,7 +251,7 @@ Now we start the CloudWatch Agent and provide it with config stored inside the p
 
 Load Config and start agent
 
-> sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c ssm:AmazonCloudWatch-linux -s
+    sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c ssm:AmazonCloudWatch-linux -s
 
 ---
 
@@ -274,7 +274,7 @@ packs instances close together inside an Availability Zone. This strategy enable
 - All instances are have direct connections to each other and can have a bandwidth of **10 Gbps** when compared to usual 5Gbps.
 - Gives higher packets per second (PPS)
 
-> If the hardware fails, the entire cluster might fail.
+  If the hardware fails, the entire cluster might fail.
 
 ---
 
@@ -287,7 +287,7 @@ strictly places a small group of instances `across distinct underlying hardware`
 - Each has their own power supply and networking hardware.
 - Useful for creating several mirrors of an application.
 
-> Limits 7 instances per AZ. This cannot be increased. Dedicated instance or host are not supported in this setup.
+  Limits 7 instances per AZ. This cannot be increased. Dedicated instance or host are not supported in this setup.
 
 ---
 
@@ -302,11 +302,11 @@ spreads your instances across _logical partitions_ such that groups of `instance
 
 Useful to create huge scale parallel processing groups having multiple instances in each group, which each group is isolated from each other.
 
-> Topology aware applications like `HDFS, HBase, and Cassandra` can make use of the distributed nature of instance placement. In such setup, impact of failure can be contained to part of an application.
+    Topology aware applications like `HDFS, HBase, and Cassandra` can make use of the distributed nature of instance placement. In such setup, impact of failure can be contained to part of an application.
 
-> You can choose how many instances to launch in each group.
+    You can choose how many instances to launch in each group.
 
-> This is not supported on dedicated hosts.
+    This is not supported on dedicated hosts.
 
 ---
 

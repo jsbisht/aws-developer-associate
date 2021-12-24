@@ -51,7 +51,7 @@ Task definition stores the resources used by the task like
 - Compatibility mode (EC2 vs Fargate mode)
 - Task role
 
-> Container Defination is defined inside task defination.
+  Container Defination is defined inside task defination.
 
 ### Task role
 
@@ -95,7 +95,7 @@ Tasks and Services use images on container registry (ECR). Via the task and serv
 - ECS will manage the number of task that are deployed if you use service and service defination.
 - You need to manage the capacity at the cluster level.
 
-> EC2 Linux/Windows + Networking
+  EC2 Linux/Windows + Networking
 
 ### Pricing
 
@@ -115,13 +115,13 @@ It differs from EC2 mode in terms of using a `shared fargate infrastructure`, wh
 
 Fargate deployment still uses a cluster with a VPC where AZs are specified.
 
-> Tasks and services are actually running from shared infrastructure, then they are injected into your VPC setup.
+    Tasks and services are actually running from shared infrastructure, then they are injected into your VPC setup.
 
 - Each task is given an elastic network interface which has an IP address within the VPC. They then run like an VPC resource.
 
 You do have choose to deploy into new VPC or choose existing one that you had designed.
 
-> Fargate (Network Only)
+    Fargate (Network Only)
 
 ### Pricing
 
@@ -155,7 +155,7 @@ Amazon ECS supports the following task placement strategies.
 
 `spread` - Place tasks evenly based on the specified attribute.
 
-> You can use task placement constraints to prevent tasks from launching on cluster instances with certain properties.
+    You can use task placement constraints to prevent tasks from launching on cluster instances with certain properties.
 
 ---
 

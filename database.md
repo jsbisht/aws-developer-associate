@@ -53,11 +53,11 @@ RDS Access ONLY via database CNAME. You cannot access the `standby replica` for 
 
 - Its a standby replica, not a read replica
 
-> The CNAME will point at the primary instance.
+  The CNAME will point at the primary instance.
 
 If any error occurs with the primary database, AWS detects this and will failover within 60 to 120 seconds to change to the new database.
 
-> During failover CNAME will be updated to point to standby replica
+    During failover CNAME will be updated to point to standby replica
 
 ## Syncronous Replication
 
@@ -127,7 +127,9 @@ When you delete the database, snapshots can be retained but they will expire bas
 
 ### RDS Restores
 
-> When performing a restore, RDS creates a new RDS instance with a new endpoint address.
+Post restore we need to point to new RDS instance's endpoint address
+
+    When performing a restore, RDS creates a new RDS instance with a `new endpoint address`.
 
 When restoring a manual snapshot, you are setting it to a single point in time. This influences the RPO value.
 
@@ -178,4 +180,22 @@ If there is a data corruption due to error or malware, you need to fallback to s
 
 Global availability can be increased with cross region read replicas
 
-> Read replica only provide read scaling, not write scaling
+    Read replica only provide read scaling, not write scaling
+
+---
+
+## RDS Security
+
+SSL/TLS is available for RDS in transit
+
+- This can be mandatory on per user basis
+
+RDS encryption is support using KMS and EBS Volume encryption
+
+- RDS database writes unencrypted data
+- Data is encrypted by host the RDS instance is running on
+- AWS or Customer Manged CMK generates Data Encryption Keys
+- Data Encryption Keys are used for the actual encryption operation
+- Storage, Logs, Snapshot and Replicas are encrypted using the same CMK [or DEK?]
+
+  Once encrytion is enabled, it cannot be removed

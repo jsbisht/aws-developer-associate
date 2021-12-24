@@ -260,7 +260,7 @@ So, in order for IAM to work.
 
 Chain of trust:
 
-> key -> account -> IAM -> IAM user
+    key -    account -    IAM -    IAM user
 
 ### IAM Policy
 
@@ -287,19 +287,19 @@ These kinds of policy can be used to create groups of users. Say, you create gro
 ## Using CMK to encrypt and decrypt data via CLI
 
 ```sh
-echo "find all the doggos, distract them with the yumz" > battleplans.txt
+echo "find all the doggos, distract them with the yumz"     battleplans.txt
 
 aws kms encrypt \
     --key-id alias/catrobot \
     --plaintext fileb://battleplans.txt \
     --output text \
     --query CiphertextBlob \
-    | base64 --decode > not_battleplans.enc
+    | base64 --decode     not_battleplans.enc
 
 aws kms decrypt \
     --ciphertext-blob fileb://not_battleplans.enc \
     --output text \
-    --query Plaintext | base64 --decode > decryptedplans.txt
+    --query Plaintext | base64 --decode     decryptedplans.txt
 ```
 
 ---

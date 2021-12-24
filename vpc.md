@@ -80,13 +80,13 @@ So, slicing `/16` network into 16 subnets gives us 16 networks with `/20` CIDR.
 
 Consider the following scenario where business has following networks:
 
-- AWS Pilot (10.0.0.0/16) `10.0.0.0 -> 10.0.255.255`
-- Azure Pilot (172.31.0.0/16) `172.31.0.0 -> 172.31.255.255`
-- Brisbane Office (192.168.10.0/24) `192.168.10.0 -> 192.168.10.255`
-- London Office (192.168.15.0/24) `192.168.15.0 -> 192.168.15.255`
-- New York (192.168.20.0/24) `192.168.20.0 -> 192.168.20.255`
-- Seattle (192.168.25.0/24) `192.168.25.0 -> 192.168.25.255`
-- Google Cloud (10.128.0.0/9) `10.128.0.0 -> 10.255.255.255`
+- AWS Pilot (10.0.0.0/16) `10.0.0.0 - 10.0.255.255`
+- Azure Pilot (172.31.0.0/16) `172.31.0.0 - 172.31.255.255`
+- Brisbane Office (192.168.10.0/24) `192.168.10.0 - 192.168.10.255`
+- London Office (192.168.15.0/24) `192.168.15.0 - 192.168.15.255`
+- New York (192.168.20.0/24) `192.168.20.0 - 192.168.20.255`
+- Seattle (192.168.25.0/24) `192.168.25.0 - 192.168.25.255`
+- Google Cloud (10.128.0.0/9) `10.128.0.0 - 10.255.255.255`
 
 Based on the CIDR to get the new network range, add the related from the following:
 
@@ -328,11 +328,11 @@ Network Access Control Lists (NACLs) are a type of security filter (like firewal
 Relationship between NACL and subnet is one to many.
 
 ```
-          |-----> Subnet
+          |-----    Subnet
           |
-1 NACL    |-----> Subnet
+1 NACL    |-----    Subnet
           |
-          |-----> Subnet
+          |-----    Subnet
 ```
 
 - Each subnet can have one NACL (Default or Custom).
@@ -391,11 +391,11 @@ If we are using NACLs we will need one for the INBOUND and the OUTBOUND
 | 110      | Custom TCP       | TCP (6)  | 1024 - 65635 | 0.0.0.0/0 | ALLOW      |
 | \*       | All IPv4 traffic | All      | All          | 0.0.0.0/0 | DENY       |
 
-> `1024 - 65635` is the emphemeral port range. Using this range isnt secure but using stateless NACLs this is the only way.
+    `1024 - 65635` is the emphemeral port range. Using this range isnt secure but using stateless NACLs this is the only way.
 
 Rule (number) between INBOUND and OUTBOUND tables are not affected by each other.
 
-> If DENY rule matches first, then ALLOW rule will never get processsed
+    If DENY rule matches first, then ALLOW rule will never get processsed
 
 ## Default NACL
 
@@ -562,7 +562,7 @@ Consider a packet from instance `i-01` being sent with a destination ip `1.3.3.7
 - Post this, NAT Gateway updates the packet's source as the public IP of the NAT Gateway and the destination as `1.3.3.7`.
 - As the destination is outside the VPC, the default route is used by the VPC Router, which forwards this packet to Internet Gateway.
 
-> The public IP used by NAT Gateway isnt real one and Internet Gateway translates IP of NAT Gateway to real public IP.
+  The public IP used by NAT Gateway isnt real one and Internet Gateway translates IP of NAT Gateway to real public IP.
 
 ## Considerations
 
@@ -595,7 +595,7 @@ IPv6
 - `::/0` route with Internet Gateway will give the instance INBOUND and OUTBOUND connectivity `subject to NACL or Security Groups`
 - `::/0` route with Egress-Only Internet Gateway will give the instance OUTBOUND only connectivity `subject to NACL or Security Groups`
 
-> NAT Gateway only use NACL and dont use Security Group
+  NAT Gateway only use NACL and dont use Security Group
 
 ## NAT Gateway vs NAT Instance
 

@@ -146,7 +146,7 @@ Get list of AZs and Select one from the list
 - Fn::GetAZs
 - Fn::Select
 
-> If you have badly configured VPC (say default VPC where you have deleted subnets), then GetAZs might not return all the AZ's.
+  If you have badly configured VPC (say default VPC where you have deleted subnets), then GetAZs might not return all the AZ's.
 
 ![img](./imgs/cloud-formation/CloudFormationFnGetAZs.webp)
 
@@ -159,7 +159,7 @@ Encode data such as user data and Substitute information based on runtime inform
 - Fn::Base64
 - Fn::Sub
 
-> Self references is invalid with Sub function. As we cannot pass the reference of the EC2 instance before its created.
+  Self references is invalid with Sub function. As we cannot pass the reference of the EC2 instance before its created.
 
 Sub function can be passed:
 
@@ -326,7 +326,7 @@ For nested stacks you start with a Root Stack and Parent Stack. In the following
 
 `Parent Stack` is the parent of the stack that it immediately creates. That is anything that has its own nested stack.
 
-> You can only use `Outputs` with nested stack. You can directly reference the logical resources created in any of the nested stacks.
+    You can only use `Outputs` with nested stack. You can directly reference the logical resources created in any of the nested stacks.
 
 The `Root Stack` can take the `Outputs` from one nested stack (VPCSTACK) and pass it as parameters to another (ADSTACK).
 
@@ -366,7 +366,7 @@ Outputs though can be exported, making them visible from other stacks.
 
 ![img](./imgs/cloud-formation/CloudFormationCrossStackReferences2.png)
 
-> Cross region or Cross account usage of exports doesnt work.
+    Cross region or Cross account usage of exports doesnt work.
 
 ### difference between cross-stack and nested-stack
 
@@ -473,9 +473,9 @@ Also, cfn-init is idempotent.
 
 ### AWS::CloudFormation::Init
 
-The configuration for `cfn-init` is stored in the template under `Metadata -> AWS::CloudFormation::Init`.
+The configuration for `cfn-init` is stored in the template under `Metadata - AWS::CloudFormation::Init`.
 
-- `cfn-init` is executed through UserData. it uses the configuration that we have defined under `Metadata -> AWS::CloudFormation::Init`.
+- `cfn-init` is executed through UserData. it uses the configuration that we have defined under `Metadata - AWS::CloudFormation::Init`.
 - also here we are using cfn-signal to indicate that the bootstraping is complete.
 
 ![img](./imgs/cloud-formation/CloudFormationCFNINIT.webp)
@@ -487,7 +487,7 @@ The configuration for `cfn-init` is stored in the template under `Metadata -> AW
 - variables used within cfn-init are replaced before UserData is passed to EC2 instance
 - cfn-init communicates with CFN to get the configuration
 
-> If you update the configuration in `Metadata -> AWS::CloudFormation::Init` and rerun the template, cfn-init isn't reapplied.
+  If you update the configuration in `Metadata - AWS::CloudFormation::Init` and rerun the template, cfn-init isn't reapplied.
 
 ---
 
@@ -527,7 +527,7 @@ Custom resources enable you to write custom provisioning logic in templates that
 - CFN doesnt support everything
 - Custom Resources let CFN integrate with anything it doesn't yet or doesnt natively support
 
-> Custom resources can be idenfified in the template using `Type: "Custom:<resource-name>`.
+  Custom resources can be idenfified in the template using `Type: "Custom:<resource-name>`.
 
 ```yaml
 Resources:
@@ -626,7 +626,7 @@ Resources:
           yum install -y httpd
           systemctl enable httpd
           systemctl start httpd
-          echo "<html><head><title>Amazing test page</title></head><body><h1><center>${Message}</center></h1></body></html>" > /var/www/html/index.html
+          echo "<html><head><title>Amazing test page</title></head><body><h1><center>${Message}</center></h1></body></html>"     /var/www/html/index.html
 ```
 
 If you re-run the stack template with a different parameter values which essentially will change the UserData (if its referring to the parameter), any instances created will be stopped and restarted. This update is called `Update With Disruption`.
@@ -634,7 +634,7 @@ If you re-run the stack template with a different parameter values which essenti
 - But the `UserData` section will not be rerun, as UserData is applied one once when the instance is launched for the first time.
 - This is because the instance configuration is not updated when the stack is updated.
 
-> ${Message} will not be updated during rerun of the stack template, until you delete the stack and create a new one.
+  ${Message} will not be updated during rerun of the stack template, until you delete the stack and create a new one.
 
 ---
 
@@ -692,7 +692,7 @@ Resources:
           yum install -y httpd
           systemctl enable httpd
           systemctl start httpd
-          echo "<html><head><title>Amazing test page</title></head><body><h1><center>${Message}</center></h1></body></html>" > /var/www/html/index.html
+          echo "<html><head><title>Amazing test page</title></head><body><h1><center>${Message}</center></h1></body></html>"     /var/www/html/index.html
           /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource Instance --region ${AWS::Region}
 ```
 
@@ -706,7 +706,7 @@ Under "/var/log"
 
 - `cloud-init-output.log` - contains all the commands that are run in the UserData component as part the bootstraping process and **their outputs**
 
-> ${Message} will not be updated during rerun of the stack template, until you delete the stack and create a new one.
+  ${Message} will not be updated during rerun of the stack template, until you delete the stack and create a new one.
 
 ---
 
@@ -794,7 +794,7 @@ Under "/var/log"
 - `cfn-init-cmd.log` - contains the overview of cfn-init command and its execution
 - `cfn-init.log` - contains the detailed breakdown of cfn-init command and its execution
 
-> ${Message} will not be updated during rerun of the stack template, until you delete the stack and create a new one.
+  ${Message} will not be updated during rerun of the stack template, until you delete the stack and create a new one.
 
 ---
 

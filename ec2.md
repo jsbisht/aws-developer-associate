@@ -93,7 +93,7 @@ When you launch an instance, the Security Groups are on the network interface an
   - If traffic is on the interface, it will be discarded if it is not from `one of the IP addresses on the interface as source` or going to `one of the IP addresses on the interface as destination`
   - This setting needs to be disabled for an EC2 instance to work as a NAT instance.
 
-## > Secondary interfaces function in all the same ways as primary interfaces except you can detach interfaces and move them to other EC2 instances.
+## Secondary interfaces function in all the same ways as primary interfaces except you can detach interfaces and move them to other EC2 instances.
 
 ## Primary IPv4 private address
 
@@ -186,7 +186,7 @@ Once an instance has been customized, an AMI can be created from that.
 
 An Amazon Machine Image (AMI) is stored in Amazon S3, but it is not directly accessible. Instead, you must use API calls or the Management Console to use an AMI.
 
-> You can change the EBS volume size during the AMI creation.
+    You can change the EBS volume size during the AMI creation.
 
 ### 4. Launch
 
@@ -202,7 +202,7 @@ AMI are regional construct:
 - The AMI from AZ-1, is stored in the region. Snapshot of EBS volumes are stored in S3, which is already a regional service.
 - You can take the AMI and create the new instance in the same AZ or another AZ in the same region.
 
-> AMI's doesnt contain the data.
+  AMI's doesnt contain the data.
 
 ---
 
@@ -249,7 +249,7 @@ The following table shows encryption support for various AMI-copying scenarios.
 | 3        | Unencrypted-to-encrypted   | Yes       |
 | 4        | Encrypted-to-unencrypted   | No        |
 
-> You cannot copy an encrypted snapshot to yield an unencrypted one.
+    You cannot copy an encrypted snapshot to yield an unencrypted one.
 
 ---
 
@@ -441,7 +441,7 @@ Instance metadata is data about your instance that you can use to configure or m
 
 Instance metadata is accessed from an EC2 instance using
 
-> http://169.254.169.254/latest/meta-data/
+    http://169.254.169.254/latest/meta-data/
 
 ## Environment
 
@@ -449,7 +449,7 @@ Instance metadata is divided into categories, for example, host name, events, an
 
 - Though the IPv4 public address is not avaiable to the OS, it can be obtained via the instance metadata.
 
-> The only IPv4 addresses an OS has are the private IPv4 address. Public IPv4 address is never configured within the OS. `AWS Internet Gateway translates the private IPv4 address to public IPv4 address`.
+  The only IPv4 addresses an OS has are the private IPv4 address. Public IPv4 address is never configured within the OS. `AWS Internet Gateway translates the private IPv4 address to public IPv4 address`.
 
 ## Authentication
 
@@ -473,8 +473,8 @@ Instance Metadata service doesnt require any authentication and its not encrypte
 
 ## CLI
 
-> wget http://s3.amazonaws.com/ec2metadata/ec2-metadata
-> chmod u+x ec2-metadata
-> ./ec2-metadata --help
+    wget http://s3.amazonaws.com/ec2metadata/ec2-metadata
+    chmod u+x ec2-metadata
+    ./ec2-metadata --help
 
 ---

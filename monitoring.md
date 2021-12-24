@@ -179,7 +179,7 @@ Its a distributed tracing application. `Designed to track session through an app
 
 We can now see a web application composed of multiple microservices, multiple VPCs, multiple regions and multiple availability zones.
 
-> X-Ray is able to trace only requests upon entry into your systems. Connectivity issues between a client and your resources cannot be traced.
+    X-Ray is able to trace only requests upon entry into your systems. Connectivity issues between a client and your resources cannot be traced.
 
 ---
 
@@ -295,7 +295,7 @@ VPC Flow logs can be added at a
 - Flow logs arent Real Time.
 - Destination can be S3 or CloudWatch Logs.
 
-> Following is traffic to and from is not recorded
+  Following is traffic to and from is not recorded
 
 - `169.254.169.254` (metadata IP)
 - `169.254.169.123` (aws time synchronization server)

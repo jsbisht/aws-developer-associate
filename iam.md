@@ -81,7 +81,7 @@ If role gets assumed by something that is allowed to assume it, then AWS creates
 - Similar to access keys but have an expiry.
 - On expiry, the identity will have to re-assume that role and then new credentials will be issued.
 
-> When a process operates under an assumed role, the `temporary security token` provides an access key for authentication. In addition to the access key, _the token also includes a session token_.
+  When a process operates under an assumed role, the `temporary security token` provides an access key for authentication. In addition to the access key, _the token also includes a session token_.
 
 ### Permission Policy
 
@@ -359,7 +359,7 @@ SCP are account permission boundries
 
 - They limit what the account can do, `including account root user`
 
-> Though root user can do everything under a given account. You can never restrict a root user. With SCP we are restricting what is allowed under a given account, in effect we are also restricting the root user.
+  Though root user can do everything under a given account. You can never restrict a root user. With SCP we are restricting what is allowed under a given account, in effect we are also restricting the root user.
 
 - You can define which regions are allowed for a given account
 - You can define what sizes of EC2 instances can be launched under a given account
@@ -374,7 +374,7 @@ SCP only act as boundries
 
 ### Identity Policies
 
-> Things that are both in SCP and Identity policy is allowed.
+    Things that are both in SCP and Identity policy is allowed.
 
 - Permission only in SCP is allowed but not granted as its not granted by identity policy
 

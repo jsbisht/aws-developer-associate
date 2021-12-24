@@ -64,7 +64,7 @@ So the following policy prevents any action against any services which are not i
 
 In the above policy document, instead of `Action` we have `NotAction`.
 
-> "NotAction": ["cloudfront:*", "iam:*", "route53:*", "support:*"]
+    "NotAction": ["cloudfront:*", "iam:*", "route53:*", "support:*"]
 
 This is a way of saying deny all the actions that are not part of the `NotAction` list.
 
@@ -144,7 +144,7 @@ When evaluating effective policy permission you have to consider:
 
 ![permission-evaluation-flow](ss/permission-evaluation-flow.webp)
 
-> If given action on the resource is allowed by resouce policy the flow stops.
+    If given action on the resource is allowed by resouce policy the flow stops.
 
 - And any explicit deny will stop the processing as well.
 - Only when a certain policy is missing the flow continues.

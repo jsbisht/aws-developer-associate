@@ -73,7 +73,7 @@ To associate a Private Hosted Zone with a VPC where VPC belongs to:
 
 Resource records can be created in the Private Hosted Zone, which are resolvable within the VPCs.
 
-> Create public hosted zone when you want access to resource records from VPC but not from public internet.
+    Create public hosted zone when you want access to resource records from VPC but not from public internet.
 
 ### Considerations
 
@@ -124,7 +124,7 @@ ALIAS records can be used for both naked/apex and normal records.
 - There is no charge for using ALIAS to point to AWS Resource.
 - Use this as the default for doing AWS resource mapping.
 
-> CNAME can be used to map NAME to an AWS resource for non nakes/apex record.
+  CNAME can be used to map NAME to an AWS resource for non nakes/apex record.
 
 ALIAS is actually a subtype.
 
@@ -134,7 +134,7 @@ If the AWS resource provides an A record, then we need to use `A record ALIAS`
 
 if the AWS resource provides an CNAME record, then we need to use `CNAMe record ALIAS`
 
-> ALIAS record is outside DNS standard and is only implemented within AWS. `So alias record can only be used if Route53 is hosting the domain`.
+    ALIAS record is outside DNS standard and is only implemented within AWS. `So alias record can only be used if Route53 is hosting the domain`.
 
 Which type of recordset is generally used to point at AWS resources?
 
@@ -225,7 +225,7 @@ Geolocation routing lets you choose the resources that serve your traffic based 
 - In US records can additionally be tagged by "state"
 - With "default" either most specific record is returned or "NO ANSWER"
 
-> Geolocation `returns relavant record` as per the users geographic location `not the closest record`.
+  Geolocation `returns relavant record` as per the users geographic location `not the closest record`.
 
 - If there is not "country" specific record, then "continent" record is returned.
 - If both "country" and "continent" doesnt exist then the fallback it to "default" record.

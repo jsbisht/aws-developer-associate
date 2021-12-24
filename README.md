@@ -11,7 +11,7 @@
 - [CloudFormation](./cloud-formation.md)
 - [Route 53](./route53.md)
 - [CloudFront](./cloud-front.md)
-- [Databases (SQL)]
+- [Databases (SQL)](./database.md)
 - [Advanced Storage]
 - [Scaling and Load Balancers]
 - [Developer Tools]

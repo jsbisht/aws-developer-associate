@@ -19,7 +19,7 @@ function setTimeInMinutes(str) {
   }
 }
 
-document.querySelectorAll(".lecture-name").forEach((node) => {
+document.querySelectorAll(".lecture-name").forEach((node) =    {
   const text = node.innerText.trim();
   const time = text.substring(text.lastIndexOf("(") + 1, text.length - 1);
   setTimeInMinutes(time);
