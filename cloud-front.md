@@ -213,6 +213,16 @@ On the origin side, the certificate installed on any of your origin needs to mat
 
 ---
 
+## Applying SSL certificate to custom domain
+
+Use ACM to apply SSL certificate to your custom domain. You need to be doing this while using `us-east-1` region selected in AWS.
+
+- You need have a hosted zone for this domain under Route53
+- To your Cloudfront distribution, do mapping to your custom domain by adding it as CNAME
+- Request certificate while specifying to fully qualified domain name same, which needs to match the CNAME you have added in Cloudfront distribution
+
+---
+
 ## Cloudfront and SNI
 
 Encryption start at TCP connection. Which is at a layer below the layer at which HTTP requests are made.
@@ -257,3 +267,139 @@ Cloudfront with Custom Origin
 - provides option to choose Origin Side protocol either as HTTP, HTTPS or same as Viewer Side protocol
 
 - Allows to pass custom header (Used to restrict access to only when this header is passed)
+
+---
+
+## Cloudfront Security - OAI & Custom Origins
+
+the main ways to secure origins from direct access (bypassing CloudFront)
+
+- Origin Access identities (OAI) - for S3 Origins
+- Custom Headers - For Custom Origins
+- IP Based FW Blocks - For Custom Origins.
+
+![img](./imgs/cloud-front/CloudFrontSecuringContent3.webp)
+
+---
+
+## CloudFront Security - Private Distributions
+
+Any content distributed via Cloudfront is PUBLIC by default.
+
+Content that is PRIVATE needs to accessed via Signed URL or Signed Cookies.
+
+A single Cloudfront distribution behaviour is either PUBLIC or PRIVATE.
+
+### Cloudfront Key
+
+A Cloudfront Key is created by the AWS Account `Root User`.
+
+- Once a key exists in an account, that account can be added as a `TRUSTED SIGNER` in Cloudfront
+- After a `TRUSTED SIGNER` is added to a Cloudfront distribution, that distribution becomes a PRIVATE distribution
+- An application running on a compute service is required to generate Signed URL or Signed Cookies in this setup
+
+### Signed URL and Signed Cookies
+
+Signed URL provides access to an single object, while Signed Cookies can provide access to multiple objects.
+
+- Use a Signed URL if the client that you are using doesnt support Signed Cookies
+- Legacy RTMP distributions cannot use Signed Cookies.
+
+### Example
+
+Here two distribution are created. One private for sensitive content and another public one which is open to all.
+
+Here every request received on cloudfont is forwarded to API Gateway which forwards it to a Lambda function. _Direct access to origin (S3) is blocked here_.
+
+- The Lambda examines if the request is for private or public content
+- If the application and user accessing the content is validated, a signed cookie is retured to the application
+
+**NOTE**: Signed cookie can only be generated if the AWS accont is listed a the TRUSTED SIGNER for the Cloudfront distribution
+
+Red line here represent signed cookie based access.
+
+![img](./imgs/cloud-front/CloudFrontSecuringContent4.webp)
+
+---
+
+## CloudFront Geo Restriction
+
+There are two types of geography based restrictions:
+
+- Cloudfront Geo Restriction
+- Third-party Geo Location
+
+### Cloudfront Geo Restriction
+
+CloudFront Geo Restriction allows for White or Black list restrictions based on ONLY Country Code.
+
+- It works using a GeoIP database that claims 99.8% plus accuracy
+- Applies to the entire distribution to restrict a request only based on geographic location
+
+**NOTE**: Edge location only gets a country code from the GeoIP database
+
+![img](imgs/cloud-front/CloudFrontGeoRestriction.webp)
+
+### Third-party Geo Location
+
+3rd Party Geolocation `requires a compute instance`, additionally `cloudfront distribution is private` so any direct access to edge location will return a 403.
+
+- the generation of signed URLs or Cookies is controlled by the compute instance
+- but can restrict based on almost anything (licensing, user login status, user profile fields and much more)
+
+![img](imgs/cloud-front/CloudFront3rdPartyGeoLocation.webp)
+
+---
+
+## CloudFront Field Level Encryption
+
+HTTPS makes sure that any data being sent over the network is encrypted. But once the data reaches the origin, the data which can contain sensitive data is in unencrypted form and will be stored in the same manner.
+
+CloudFront Field Level Encryption allows the use of public key at the Edge Location, so that even after the sensitive data reaches origin, it is encrypted.
+
+- It can then be decrypted only using the private key
+
+![img](./imgs/cloud-front/FieldLevelEncryption2.webp)
+
+---
+
+## Lambda@Edge
+
+Lambda@Edge allows cloudfront to run lambda function at CloudFront edge locations to modify traffic between the viewer and edge location and edge locations and origins.
+
+![img](./imgs/cloud-front/LambdaAtEdge.webp)
+
+### Use Cases
+
+General Examples
+
+- A/B testing
+- Overriding a response header
+- Serving static content (generated response)
+- Generating an HTTP redirect (generated response)
+- Adding a header based on a query string parameter
+- Normalizing query string parameters to improve the cache hit ratio
+- Redirecting unauthenticated users to a sign-in page
+
+Personalized Content by country or device type header
+
+- Redirecting viewer requests to a country-specific URL
+- Serving different versions of an object based on the device
+
+Content-based dynamic origin selection
+
+- Using an origin request trigger to change from a custom origin to an Amazon S3 origin
+- Using an origin-request trigger to change the Amazon S3 origin Region
+- Using an origin request trigger to change from an Amazon S3 origin to a custom origin
+- Using an origin request trigger to gradually transfer traffic from one Amazon S3 bucket to another
+- Using an origin request trigger to change the origin domain name based on the country header
+
+Updating error statuses
+
+- Using an origin response trigger to update the error status code to 200
+- Using an origin response trigger to update the error status code to 302
+
+Accessing the request body
+
+- Using a request trigger to read an HTML form
+- Using a request trigger to modify an HTML form
