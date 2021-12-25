@@ -257,7 +257,7 @@ RDS IAM Authentication allows to access RDS instance without password
 
 ---
 
-# Amazon Aurora
+# Aurora Provisioned
 
 Aurora architecture is VERY different from RDS. At it's heart it uses a **cluster**
 
@@ -267,6 +267,8 @@ Aurora architecture is VERY different from RDS. At it's heart it uses a **cluste
 - Aurora doesn't use local storage for the compute instances. An Aurora cluster has a shared cluster volume. Provides faster provisioning.
 
 ![img](./imgs/databases/AuroraStorage.webp)
+
+---
 
 ## Basics
 
@@ -312,6 +314,9 @@ Reader endpoint - will load balance over the available replicas
 
 ### Considerations
 
+- By default, Aurora cluster have two endpoint.
+  - Reader (points at replica instances)
+  - Writer (points at instances capable of writing)
 - You can create custom endpoints
 - Each instance (primary or replica) will have their own endpoint
 
@@ -340,3 +345,96 @@ Enabled on a per cluster basis and can adjust the window backtrack can perform.
 **Fast clones** make a new database much faster than copying all the data. It references the original storage and `only write the differences between those two`. It only copies the difference and only store changes between the source data and the clone.
 
 ---
+
+## Demo - Migrating from RDS MySQL snapshot to RDS Aurora
+
+https://learn.cantrill.io/courses/1101194/lectures/27894853
+
+---
+
+# Aurora Serverless
+
+It uses ACU - Aurora Capacity Units
+
+    For a cluster, you can set a min and max ACU based on the load
+
+Can go to 0 and be paused.
+
+    Application needs to tolerate lengthier load time once it goes to 0.
+
+Consumption billing per-second basis
+
+Same resilience as Aurora (6 copies across AZs)
+
+ACUs are stateless and shared across many AWS customers and have no local storage.
+
+They have access to cluster storage in the same way as Aurora Provisioned mode has.
+
+![img](./imgs/databases/aurora-serverless.webp)
+
+There is a shared proxy fleet. When a customer interacts with the data they are actually communicating with the proxy fleet. The proxy fleet brokers an application with the ACU and ensures you can scale in and out without worrying about usage.
+
+---
+
+## Aurora Serverless - Use Cases
+
+- Infrequently used applications. You only pay for resources as you consume them on a per second basis.
+- New applications (when you are unsure about the load requirement)
+- Great for variable workloads. It can scale in and out based on demand
+- It is good for applications with unpredictable workloads.
+- It can be used for development and test databases because it can `scale back to 0`, when not needed.
+- Great for multi-tenant applications. Aurora fits perfect when you consider increasing reveneue with increasing usage as a metric.
+
+---
+
+# Database Migration Service (DMS)
+
+A `managed database migration` service. This runs using a replication instance.
+
+    For zero downtime migration, use DMS
+
+Need to define the source and destination endpoints. These point at the physical source and target databases.
+
+- At least one endpoint MUST be on AWS.
+- You can run migration on two on-premise databases
+
+## Steps
+
+- You start with a source and target database (each using any of the DB engine)
+- In between these the replication instance will be used to define replication tasks
+- Replication instance uses source and destination endpoints to access source and destination databases
+
+![img](./imgs/databases/DMS.webp)
+
+## Types of jobs
+
+- Full Load (`one off migration of all data`)
+- Full load plus change data capture (CDC) (`full migration plus any ongoing changes that happened during migration`)
+- CDC Only (`if you want to use alternative method such as native tooling for bulk db data transfer`)
+  - i.e. migrate existing data using migration tools provided by the respective database in use
+  - post the migration transfer the changes only using DMS
+  - useful to transfer bulk changes outside DMS
+
+## Schema Conversion Tool (SCT)
+
+Can assist with Schema conversion
+
+    Not used when migrating between DB's using DB engines of same type (Eg. On premise MySQL to RDS MySQL)
+
+    Used for On premise Microsoft SQL to RDS MySQL
+
+- Used when converting from one database to another
+- Useful for larger migration like moving from on premise to aws
+- Works with OLTP databases (MySQL, Microsoft SQL, Oracle)
+- Works with OLAP databases (Teradata, Oracle, Vertica, Greenplum)
+
+### Larger Migration (with snowball)
+
+Data of massive size will be moved using snowball instead of over network.
+
+Steps
+
+1. Use SCT to extract data locally and move it to snowball device.
+2. Ship the snowball device to AWS. And the data from it is loaded onto S3 bucket.
+3. DMS migrates data from S3 into target store.
+4. (Optionally) You can use CDC to capture changes and move them to target database
