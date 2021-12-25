@@ -51,13 +51,21 @@ Billing is per instance and hourly rate for that compute. You are billed for sto
 
 RDS Access ONLY via database CNAME. You cannot access the `standby replica` for any reason via RDS.
 
-- Its a standby replica, not a read replica
+    The CNAME will point at the primary instance.
 
-  The CNAME will point at the primary instance.
+> Its a standby replica, not a read replica
 
 If any error occurs with the primary database, AWS detects this and will failover within 60 to 120 seconds to change to the new database.
 
     During failover CNAME will be updated to point to standby replica
+
+## Subnet Groups
+
+.... used to create grouping of subnets that the RDS will be using
+
+## Security Groups
+
+....
 
 ## Syncronous Replication
 
@@ -393,7 +401,7 @@ A `managed database migration` service. This runs using a replication instance.
 
     For zero downtime migration, use DMS
 
-Need to define the source and destination endpoints. These point at the physical source and target databases.
+We need to `manually define` the source and destination endpoints. These point at the physical source and target databases.
 
 - At least one endpoint MUST be on AWS.
 - You can run migration on two on-premise databases
@@ -406,7 +414,7 @@ Need to define the source and destination endpoints. These point at the physical
 
 ![img](./imgs/databases/DMS.webp)
 
-## Types of jobs
+## Types of migration
 
 - Full Load (`one off migration of all data`)
 - Full load plus change data capture (CDC) (`full migration plus any ongoing changes that happened during migration`)
@@ -438,3 +446,23 @@ Steps
 2. Ship the snowball device to AWS. And the data from it is loaded onto S3 bucket.
 3. DMS migrates data from S3 into target store.
 4. (Optionally) You can use CDC to capture changes and move them to target database
+
+---
+
+# Secrets Manager
+
+Shares functionality with SSM Parameter Store - but Secrets manager is specialised for secrets.
+
+- Designed for secrets like passwords, api keys, etc
+- Usable via CLI, API, SDK and Console
+- Supports key rotation via periodic invocation of Lambda
+- Useful to encrypt secrets at rest
+- Secrets access is controlled via IAM permissions
+
+Directly integrates with some AWS products like RDS
+
+- So if a secret is rotated, only few product support updation of this change (eg. RDS)
+
+Situations where you are supposed to store hierarchical information, SSM parameter store is better suited.
+
+But if you need to store secrets that needs to be rotated or product integration, Secrets Manager should be used.

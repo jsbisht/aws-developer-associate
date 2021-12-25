@@ -185,6 +185,8 @@ Two important settings which should be checked in case of issues. (These are fou
 | 172.31.0.0/16 | Local  |
 | 172.31.0.0/20 | eni-id |
 
+> [Example use case demo](https://learn.cantrill.io/courses/aws-certified-developer-associate/lectures/27894872)
+
 ### Internet Gateway
 
 - Regional resilient gateway attached to a VPC.
