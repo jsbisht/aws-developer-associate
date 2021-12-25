@@ -190,12 +190,65 @@ SSL/TLS is available for RDS in transit
 
 - This can be mandatory on per user basis
 
+### Basics
+
 RDS encryption is support using KMS and EBS Volume encryption
+
+    Once encrytion is enabled, it cannot be removed
 
 - RDS database writes unencrypted data
 - Data is encrypted by host the RDS instance is running on
 - AWS or Customer Manged CMK generates Data Encryption Keys
 - Data Encryption Keys are used for the actual encryption operation
-- Storage, Logs, Snapshot and Replicas are encrypted using the same CMK [or DEK?]
 
-  Once encrytion is enabled, it cannot be removed
+> Storage, Logs, Snapshot and Replicas are encrypted using the same CMK [or DEK?]
+
+### RDS MySQL and RDS Oracle
+
+RDS MySQL and RDS Oracle support TDE
+
+- TDE stands for Transparent Data Encryption
+- Encryption is handled by the DB engine instead of the host
+- This is less trust worthy
+
+RDS Oracle support TDE with CloudHSM
+
+- Allows much stronger control over the keys
+- Allows to remove AWS from chain of trust
+
+### How Encryption and TDE work
+
+Consider few DB instances backed by their host and these instances use EBS for their underlying storage.
+
+With Oracle using TDE with CloudHSM.
+
+    Data is encrypted before leaving the instance
+
+- This setup peforms encryption using DB engine
+- Apart from RDS instance, the key is not known to AWS
+
+With KMS based encryption
+
+    Database engine has no encryption awareness
+
+- DEKs are loaded in to the hosts as required
+- Database engine perfroms a regular write operation, unaware of any encryption
+- Data is encrypted by the host before sending it to EBS volume
+- Data is decrypted by the host after reading ti from EBS volume
+
+![img](./imgs/databases/RDSEncryption.webp)
+
+> Red lines represent encryption and decryption operations
+
+### RDS IAM Authentication
+
+    IAM Authentication is only used for authentication, authorisation is controlled within RDS (based on permissions on the local DB user).
+
+RDS IAM Authentication allows to access RDS instance without password
+
+    For this to work, you need to configure RDS instance to allows IAM user authentication
+
+- `generate-db-auth-token` is used to create the token thats valid for `15 minutes`
+- Policy attached to Users or Roles `maps that IAM identity onto the local RDS user`
+
+![img](./imgs/databases/RDSIAMAuthentication.webp)
