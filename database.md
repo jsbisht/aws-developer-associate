@@ -190,6 +190,8 @@ SSL/TLS is available for RDS in transit
 
 - This can be mandatory on per user basis
 
+Following covers encryption at rest
+
 ### Basics
 
 RDS encryption is support using KMS and EBS Volume encryption
@@ -252,3 +254,89 @@ RDS IAM Authentication allows to access RDS instance without password
 - Policy attached to Users or Roles `maps that IAM identity onto the local RDS user`
 
 ![img](./imgs/databases/RDSIAMAuthentication.webp)
+
+---
+
+# Amazon Aurora
+
+Aurora architecture is VERY different from RDS. At it's heart it uses a **cluster**
+
+- A single primary instance and 0 or more replicas
+- Unlike other RDS products, replicas within Aurora can be used for reads during normal operation
+- Provides benefits of RDS multi-AZ and read-replicas
+- Aurora doesn't use local storage for the compute instances. An Aurora cluster has a shared cluster volume. Provides faster provisioning.
+
+![img](./imgs/databases/AuroraStorage.webp)
+
+## Basics
+
+Aurora cluster functions across different availability zones.
+
+    There is a shared SSD based storage of max 64 TiB. It also has 6 Replicas in multiple AZs
+
+All instances have access to all of these storage nodes. This replication happens at the storage level. No extra resources are consumed during replication.
+
+`By default the primary instance is the only one who can write`. The replicas will have read access.
+
+> Aurora automatically detect hardware failures on the shared storage. If there is a failure, it immedietly repairs that area of disk. It automatically recreates that data with no corruption.
+
+With Aurora you can have `up to 15 replicas` and `any of them can be a failover target`. The failover operation will be quicker because it doesn't have to make any storage modifications.
+
+Cluster shared volume is `based on SSD storage by default` so high IOPS and low latency. (There is no option of choosing magnetic storage)
+
+    Aurora cluster does not specify the amount of storage needed. This is based on what is consumed.
+
+Replicas can be added and removed without requiring storage provisioning. (As storage allocation is automatically managed with Aurora)
+
+### Billing - High water mark
+
+Say you have consumed 50GB of storage. So at this point the High water mark for this Aurora cluster will be 50 GB.
+
+- Even if you clean up and reduce the storage space, you will be still billed for High Water Mark you had reached in the past
+- Storage which is freed up can be re-used.
+- To reduce the billing, you might have to move to a new Aurora cluster
+
+---
+
+## Endpoints
+
+Unlike other RDS products, Aurora cluster has multiple endpoints.
+
+Cluster endpoint - points at the primary instance
+
+Reader endpoint - will load balance over the available replicas
+
+    As additional replicas are added, reader endpoint is automatically updated to load balanced over replicas
+
+![img](./imgs/databases/AuroraEndpoints.webp)
+
+### Considerations
+
+- You can create custom endpoints
+- Each instance (primary or replica) will have their own endpoint
+
+---
+
+## Costs
+
+- No free-tier option
+- Aurora doesn't support micro instances
+- Beyond RDS singleAZ (micro) Aurora provides best value.
+- Storage - GB-Month consumed, IO cost per request
+- Storage consumed by backups are included in the cost
+
+---
+
+## Aurora Restore, Clone and Backtrack
+
+    Backups in Aurora work in the same way as RDS
+
+    Restores create a new cluster.
+
+`Backtrack` allows for you to roll back to a previous point in time. You can roll back in place to a point before that corruption.
+
+Enabled on a per cluster basis and can adjust the window backtrack can perform.
+
+**Fast clones** make a new database much faster than copying all the data. It references the original storage and `only write the differences between those two`. It only copies the difference and only store changes between the source data and the clone.
+
+---
