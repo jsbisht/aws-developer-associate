@@ -406,6 +406,8 @@ We need to `manually define` the source and destination endpoints. These point a
 - At least one endpoint MUST be on AWS.
 - You can run migration on two on-premise databases
 
+---
+
 ## Steps
 
 - You start with a source and target database (each using any of the DB engine)
@@ -413,6 +415,8 @@ We need to `manually define` the source and destination endpoints. These point a
 - Replication instance uses source and destination endpoints to access source and destination databases
 
 ![img](./imgs/databases/DMS.webp)
+
+---
 
 ## Types of migration
 
@@ -422,6 +426,8 @@ We need to `manually define` the source and destination endpoints. These point a
   - i.e. migrate existing data using migration tools provided by the respective database in use
   - post the migration transfer the changes only using DMS
   - useful to transfer bulk changes outside DMS
+
+---
 
 ## Schema Conversion Tool (SCT)
 

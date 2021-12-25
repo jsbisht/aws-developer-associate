@@ -61,3 +61,7 @@ This is neither a gateway nor a VPN connection, and does not rely on a separate 
 A VPC peering connection helps you to facilitate the transfer of data. For example, if you have more than one AWS account, you can peer the VPCs across those accounts to create a file sharing network. You can also use a VPC peering connection to allow other VPCs to access resources you have in one of your VPCs.
 
 - In case of cross account peering connection, one account creates the peering connection request and other approves the same
+
+# VPC
+
+Can a VPC span across regions?
