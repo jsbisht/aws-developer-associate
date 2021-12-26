@@ -6,7 +6,7 @@ Row Store (MySQL) can be used to get list of rows.
 
 These rows can then be moved to Column Store (Redshift) for processing.
 
-Wihtout Graph database a similar data fetch from SQL database would require lots of complex query processing for each request.
+Without Graph database a similar data fetch from SQL database would require lots of complex query processing for each request.
 
 ## Databases on EC2
 
@@ -15,13 +15,21 @@ When to use:
 - When you want particular version of DB
 - When you want certain combination of OS and DB
 
+---
+
 # Relational Database Service (RDS)
 
-Database-as-a-service (DBaaS) - not entirely true more of DatabaseServer-as-a-service. Managed Database Instance for one or more databases
+Database-as-a-service (DBaaS) - not entirely true, more of DatabaseServer-as-a-service. Managed Database Instance for one or more databases
 
-Multiple engines are MySQL, MariaDB, PostgreSQL, Oracle, Microsoft SQL
+Multiple engines to choose from:
 
-Amazon Aurora. This is so different from normal RDS, it is a seperate product.
+- MySQL
+- MariaDB
+- PostgreSQL
+- Oracle
+- Microsoft SQL
+
+Amazon Aurora: Though part of RDS products, but is so different from normal RDS, it is a seperate product.
 
 ## RDS Database Instance
 
@@ -47,9 +55,15 @@ magnetic - compatibility
 
 Billing is per instance and hourly rate for that compute. You are billed for storage allocated.
 
+---
+
 ## RDS Multi AZ (High-Availability)
 
-RDS Access ONLY via database CNAME. You cannot access the `standby replica` for any reason via RDS.
+When you provision a Multi-AZ DB Instance, Amazon RDS automatically creates a `primary DB Instance` and `synchronously` replicates the data to a `standby instance` in a `different Availability Zone (AZ)`.
+
+- Each AZ runs on its own physically distinct, independent infrastructure.
+
+RDS Access ONLY via database CNAME. The standby replica cannot be accesed directly unless a failure occurs.
 
     The CNAME will point at the primary instance.
 
@@ -59,15 +73,15 @@ If any error occurs with the primary database, AWS detects this and will failove
 
     During failover CNAME will be updated to point to standby replica
 
-## Subnet Groups
+### Subnet Groups
 
 .... used to create grouping of subnets that the RDS will be using
 
-## Security Groups
+### Security Groups
 
 ....
 
-## Syncronous Replication
+### Syncronous Replication
 
 **Syncronous Replication** is a keyword:
 
@@ -78,28 +92,18 @@ If any error occurs with the primary database, AWS detects this and will failove
 
 This does not provide fault tolerance - there will be some impact during change
 
-## Considerations
+### Considerations
 
 - Multi-AZ feature is not free tier, extra infrastructure for standby. Generally two times the price.
-- The standby replica cannot be accesed directly unless a fail occurs.
+- The standby replica cannot be accesed directly unless a failure occurs.
 - Failover is highly available, not fault tolerant.
 - Standby replica is in the same region only (other AZ in the VPC).
 - Backups taken from standby (removes performance impacts).
 - Standby replica will be used during AZ outage, primary failure, manual failover, instance type change, and software patching
 
+---
+
 ## RDS Backup and Restores
-
-RPO - Recovery Point Objective
-
-- Time between the last backup and when the failure occured
-- Amount of maximum data loss
-- Influences technical solution and cost
-- Lowering RPO would cost more
-
-RTO - Recovery Time Objective
-
-- Time between the Disaster Recovery (DR event) and full recovery
-- Influenced by process, staff, tech and documentation
 
 ![img](./imgs/databases/RPOvsRTO.webp)
 
@@ -113,7 +117,7 @@ Types of Backups
 `Both type of backup use AWS managed S3 Buckets`.
 
 - The buckets will not be visible in the AWS mgmt console
-- Since data in S3 is replicated across regions, `RDS data becomes region resiliant`
+- As S3's data is replicated across regions, `RDS data becomes region resiliant`
 - For single-az, the backup will occur from single instance
 - For multi-az, backup occurs from standby replica
 
@@ -135,17 +139,21 @@ When you delete the database, snapshots can be retained but they will expire bas
 
 ### RDS Restores
 
-Post restore we need to point to new RDS instance's endpoint address
-
     When performing a restore, RDS creates a new RDS instance with a `new endpoint address`.
 
+Post restore we need to point to new RDS instance's endpoint address
+
+Restores aren't fast, think about RTO.
+
+#### Manual
+
 When restoring a manual snapshot, you are setting it to a single point in time. This influences the RPO value.
+
+#### Automatic
 
 Automated backups are different, any 5 minute point in time.
 
 Backups are restored and `transaction logs are replayed to bring DB to desired point in time`.
-
-Restores aren't fast, think about RTO.
 
 ---
 
@@ -173,18 +181,18 @@ You can combine this with multi-az.
 - Use multi-az to provide availability benefit and `to remove any backup impacting application performance`
 - Read replicas will be used to improve read performance
 - Read replicas can have their read replicas
-- Each nested read replica will have more lag than the read replica from its source
+- Each nested read replica will have more lag than its source read replica
 
 ### RPO and RTO
 
-RPO's are near zero for read replicas (because of asynchronous replications)
+RPO's are near zero for read replicas [why?]
 
 RTO's are low because the read replica can be quickly promoted to primary instance
 
 - Once promoted read and write are allowed on that instance
-- They cannot be converted into a read replica again
+- Once promoted, it cannot be converted into a read replica again
 
-If there is a data corruption due to error or malware, you need to fallback to snapshot instead of read replicas
+> If there is a data corruption due to error or malware, you need to fallback to snapshot instead of read replicas
 
 Global availability can be increased with cross region read replicas
 
@@ -202,12 +210,12 @@ Following covers encryption at rest
 
 ### Basics
 
-RDS encryption is support using KMS and EBS Volume encryption
+RDS encryption is supported using KMS and EBS Volume encryption
 
     Once encrytion is enabled, it cannot be removed
 
 - RDS database writes unencrypted data
-- Data is encrypted by host the RDS instance is running on
+- `Data is encrypted by host` the RDS instance is running on
 - AWS or Customer Manged CMK generates Data Encryption Keys
 - Data Encryption Keys are used for the actual encryption operation
 
@@ -218,7 +226,7 @@ RDS encryption is support using KMS and EBS Volume encryption
 RDS MySQL and RDS Oracle support TDE
 
 - TDE stands for Transparent Data Encryption
-- Encryption is handled by the DB engine instead of the host
+- `Encryption is handled by the DB engine` instead of the host
 - This is less trust worthy
 
 RDS Oracle support TDE with CloudHSM
@@ -248,11 +256,15 @@ With KMS based encryption
 
 ![img](./imgs/databases/RDSEncryption.webp)
 
-> Red lines represent encryption and decryption operations
+> Red lines represents encrypted data
+
+> Green lines represents unencrypted data
 
 ### RDS IAM Authentication
 
-    IAM Authentication is only used for authentication, authorisation is controlled within RDS (based on permissions on the local DB user).
+    IAM Authentication is only used for authentication
+
+    Authorisation is controlled within RDS (based on permissions on the local DB user).
 
 RDS IAM Authentication allows to access RDS instance without password
 
@@ -282,7 +294,7 @@ Aurora architecture is VERY different from RDS. At it's heart it uses a **cluste
 
 Aurora cluster functions across different availability zones.
 
-    There is a shared SSD based storage of max 64 TiB. It also has 6 Replicas in multiple AZs
+    There is a shared SSD based storage of max 64 TiB. It also has `6 Replicas` in multiple AZs
 
 All instances have access to all of these storage nodes. This replication happens at the storage level. No extra resources are consumed during replication.
 
@@ -294,7 +306,7 @@ With Aurora you can have `up to 15 replicas` and `any of them can be a failover 
 
 Cluster shared volume is `based on SSD storage by default` so high IOPS and low latency. (There is no option of choosing magnetic storage)
 
-    Aurora cluster does not specify the amount of storage needed. This is based on what is consumed.
+    With Aurora cluster we not specify the amount of storage needed. This is based on what is consumed.
 
 Replicas can be added and removed without requiring storage provisioning. (As storage allocation is automatically managed with Aurora)
 
@@ -304,7 +316,7 @@ Say you have consumed 50GB of storage. So at this point the High water mark for 
 
 - Even if you clean up and reduce the storage space, you will be still billed for High Water Mark you had reached in the past
 - Storage which is freed up can be re-used.
-- To reduce the billing, you might have to move to a new Aurora cluster
+- To reduce the billing, you might have to **move to a new Aurora cluster**
 
 ---
 
@@ -342,13 +354,13 @@ Reader endpoint - will load balance over the available replicas
 
 ## Aurora Restore, Clone and Backtrack
 
-    Backups in Aurora work in the same way as RDS
+    Backups in Aurora work in the same way as RDS.
 
     Restores create a new cluster.
 
 `Backtrack` allows for you to roll back to a previous point in time. You can roll back in place to a point before that corruption.
 
-Enabled on a per cluster basis and can adjust the window backtrack can perform.
+Enabled on a per cluster basis and can adjust the window with which backtrack can be perform.
 
 **Fast clones** make a new database much faster than copying all the data. It references the original storage and `only write the differences between those two`. It only copies the difference and only store changes between the source data and the clone.
 
@@ -435,7 +447,7 @@ Can assist with Schema conversion
 
     Not used when migrating between DB's using DB engines of same type (Eg. On premise MySQL to RDS MySQL)
 
-    Used for On premise Microsoft SQL to RDS MySQL
+    Used for migrating between on-premise Microsoft SQL to RDS MySQL
 
 - Used when converting from one database to another
 - Useful for larger migration like moving from on premise to aws

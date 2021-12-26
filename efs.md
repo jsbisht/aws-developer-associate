@@ -4,17 +4,17 @@
 
     EFS can be shared between many EC2 instances.
 
-    This is a private service, access is via mount targets inside a VPC.
+    This is a `private` service, access is via mount targets inside a VPC.
 
 - EFS moves the instances closer to a stateless.
 - EFS is an implementation of NFSv4
 - EFS Filesystems can be mounted in Linux.
 - Using Amazon EFS with Microsoft Windows–based Amazon EC2 instances is not supported.
-- You can access from on-premises with VPN or Direct Connect so long as access is configured.
+- You can `access from on-premises with VPN or Direct Connect` so long as access is configured.
 
 ### Elastic File System Explained
 
-EFS runs inside a VPC.
+    EFS runs inside a VPC.
 
 EFS includes POSIX permissions (Portable Operating System Interface for maintaining compatibility between different linux distributions).
 
@@ -35,7 +35,7 @@ EFS is Linux Only.
 Two performance modes:
 
 - General purpose (default for 99.9% of uses)
-- Max I/O performance mode (
+- Max I/O performance mode
 
 Two throughput modes:
 
@@ -109,7 +109,7 @@ A fileshare can be created for example:
 
 ## FSx for Lustre
 
-FSx for Lustre is a managed file system which uses designed for high performance computing
+FSx for Lustre is a managed file system which is designed for high performance computing
 
 It delivers extreme performance for scenarios such as `Big Data`, `Machine Learning` and Financial Modeling
 

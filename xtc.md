@@ -65,3 +65,24 @@ A VPC peering connection helps you to facilitate the transfer of data. For examp
 # VPC
 
 Can a VPC span across regions?
+
+# AWS Direct Connect
+
+Direct Connect provides Amazon Web Services (AWS) customers with a way to transfer data that does not involve using the public Internet.
+
+Say your company uses multiple Amazon VPCs and is setting up a new office.
+
+- Establish a private connection from your new office’s network to your Amazon VPC using AWS Direct Connect
+- This option provides predictable network performance, reduces bandwidth costs, and doesn’t require that customers be responsible for implementing high availability solutions for all VPN endpoints.
+- The downside of this option (possible requiring additional telecom and hosting provider relationships) is mitigated in this instance because the office is new and would need to provision a whole new network anyway.
+
+AWS Direct Connect uses dedicated, private network connections between your intranet and Amazon VPC. Use AWS Direct connect:
+
+- If you have an immediate need, have low to modest bandwidth requirements, and can tolerate the inherent variability in Internet-based connectivity.
+- A VPC VPN Connection utilizes IPSec to establish encrypted network connectivity between your intranet and Amazon VPC over the Internet.
+
+## Scenario
+
+You are managing your company's data and preparing for a migration to an AWS cloud environment. One of the first steps you are doing is uploading data to Amazon S3 buckets. You are uploading large amounts of data overnight, 3 to 5 TB to an S3 bucket. What steps can you take to decrease the amount of time to perform these uploads?
+
+Using AWS Direct Connect, data that would have previously been transported over the Internet can now be delivered through a private network connection between AWS and your datacenter or corporate network. In many circumstances, private network connections can reduce costs, increase bandwidth, and provide a more consistent network experience than Internet-based connections.
