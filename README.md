@@ -23,4 +23,5 @@
 
 ---
 
-Create hands-on exercises covering all the key topics
+⬜ Create hands-on exercises covering all the key topics
+⬜ Create cheatsheet for quick revision
