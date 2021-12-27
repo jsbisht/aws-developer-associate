@@ -179,6 +179,8 @@ CreateKey, Encrypt and Decrypt are individual operations and require their own p
 
 CMK will be used to create encrypted DEK. This process of encrypting one key with another is called envelope encryption.
 
+    CMK will be a symmetric key as its used for both encryption and decryption
+
 Now encrytped DEK and encrypted object is stored without the need of storing the plaintext DEK.
 
 So even if someone gained access to encrypted DEK and encrypted object, they will not be able to perform decryption as the CMK was used to encrypt DEK. And CMK is stored in KMS.

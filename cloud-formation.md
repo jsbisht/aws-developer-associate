@@ -573,6 +573,20 @@ In the example above, when you create a bucket using custom resource
 
 ---
 
+## Misc
+
+### CLI
+
+The `aws cloudformation package` command packages the local artifacts (local paths) that your AWS CloudFormation template references. The command uploads local artifacts, such as source code for an AWS Lambda function or a Swagger file for an AWS API Gateway REST API, to an S3 bucket. The command returns a copy of your template, replacing references to local artifacts with the S3 location where the command uploaded the artifacts.
+
+`aws cloudformation validate-template` command will just check the template if it is a valid JSON or YAML file.
+
+`aws cloudformation deploy` command uses S3 as the location for artifacts that were defined in the Cloudformation template.
+
+`aws cloudformation update-stack` command is used to update the stack.
+
+---
+
 # Demo
 
 ## 1. UserData

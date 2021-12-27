@@ -13,7 +13,7 @@
 - [CloudFront](./cloud-front.md)
 - [Databases (SQL)](./database.md)
 - [Advanced Storage](./efs.md)
-- [Scaling and Load Balancers]
+- [Scaling and Load Balancers](./scaling.md)
 - [Developer Tools]
 - [Event Driven and Serverless]
 - [Lambda]
