@@ -24,7 +24,7 @@ Introduced in 2009. Is not replaced by v2 ELB which is recommended at the moment
 - Classic Load Balancer is not really layer 7 supporting. It lacks many feature.
 - One limitation of Classic Load Balancer is that it only support 1 SSL certificate per load balancer
 
-### Applicatoin Load Balancer
+### Application Load Balancer
 
 Supports layer 7 features. Such as:
 
@@ -52,7 +52,7 @@ Its the job of the load balancer to accept connections from the customer.
 - So the infrastructure can scale up or scale down without affecting the customer
 - So even if the infrastructure fail and is repaired, user wouldnt be directly affected
 
-Consider the following example where we have a single AWS region with two availability zone A and B. Each of the AZ has one public subnet and few private subnets.
+Consider the following example where we have a single AWS VPC (region?) with two availability zone A and B. Each of the AZ has one public subnet and few private subnets.
 
 An ELB is placed between these two nodes and which then adds one or more ELB nodes within the subnets that we pick. In our case we have chosen public subnets.
 
@@ -86,3 +86,54 @@ Once a connection is made to the `Internet Facing ELB node`, it then makes a con
     ELB requires that the subnet has 8+ free IPs per subnet.
 
 Since 5 IP addresses are reserved by AWS. So we need `/27 or larger subnet` to deploy an ELB which can scale. (/28 also will work in certain scenarios)
+
+    EC2 doesnt need to be public to work with an ELB
+
+### Typical Multi-Tiered Application
+
+Consider the following example of a VPC containing two AZs.
+
+We also have an internet facing ELB. We have an Web Application Scaling Group (ASG), providing frontend capability of the application.
+
+We also have another internal ELB. We have ASG for application instances. These are used by the web servers of the application.
+
+And in the DB subnet, we have aurora instances.
+
+#### The Problem
+
+In this case everything is totally dependent on the subsequent layer.
+
+- If the web instance user is connected to scaled or failed, there is an issue.
+- If the app instances web layer is connected to scaled or failed, we have a problem.
+
+#### The Solution
+
+What we can do is that we can add ELB's between the layers (tiers), to abstract one tier from another.
+
+![img](./imgs/scaling/ELBArchitecture2.webp)
+
+In this case the user will connect directly to the ELB, which will connect to an application instance.
+
+- So even if a instance fails or scales, user would be unaffected [How? What happens to the current request which was sent to failed instance?]
+
+The web instance will connect to the app instance through an internal ELB. This would abstract away the direct connection between instances of these tiers.
+
+    ELB's allow each tier to scale independently.
+
+    If load on app tier increases, it can scale without affecting any other tier
+
+### Cross-Zone ELB
+
+Note that we use at least one ELB node per AZ. So, in the following example we have a simplified VPC with one ELB in each AZ.
+
+So the user will connect to the DNS name of the application which points to the DNS name of the ELB DNS name.
+
+The DNS name of a ELB will balance load equally between the ELB nodes. [How DNS name can send traffic to any of the ELB node?]
+
+![img](./imgs/scaling/ELBArchitecture3.webp)
+
+Historically LB nodes could only distribute load within the AZ they are in.
+
+With `Cross-Zone Load Balancing` an ELB node can be distribute load across any of the instance in any AZ.
+
+- This is now enabled by default for an application load balancer.
