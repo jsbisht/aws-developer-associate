@@ -317,7 +317,7 @@ You can manually set the values for the ASG and it will set the number of instan
 
 ---
 
-## Health Checks
+## ASG Health Checks
 
 By default, ASG also checks the health of instances that they provision. This is done by using the `EC2 status checks`.
 
@@ -336,6 +336,38 @@ If you have a LT or LC which can provision an EC2 instance
 You get a simple instance recovery.
 
 > Since ASG work across AZs, on failure of EC2, another one can be provisioned in another AZ
+
+### Types of Health Checks
+
+- EC2 (default)
+- ELB (Can be enabled on ASG)
+- Custom
+
+EC2 health checks considers the following status as UNHEALTHY (anything other than RUNNING state):
+
+- Stopping
+- Stopped
+- Terminated
+- Shutting Down
+- Impaired (not passing 2/2 checks)
+
+With ELB health checks option instance is considered HEALTHY
+
+- If its in RUNNING state
+- And if it passes ELB health check (like pattern matching, etc)
+- With ELB health check integerated with ASG, the checks are more application aware (Layer 7)
+
+Custom health check integrates with external system to mark instances are healthy or unhealthy.
+
+### Health check grace period
+
+    This defaults to 300s
+
+Health check grace period is time between starting an instance and performing health checks.
+
+This allows system to launch, perform bootstrapping and let application start before health check is peformed.
+
+> If you dont have Health check grace period long enough the application might start peforming health check before the application is started
 
 ---
 
@@ -411,3 +443,32 @@ Set one or more EC2 instance as Standby (or InService), during maintainence so t
 - Use cooldowns to avoid rapid scaling
 - Use smaller instances to save cost
 - Use ASG with ALB's to abstract away instance dependency
+
+---
+
+## ASG Lifecycle Hooks
+
+You can define `custom actions during ASG actions` like instance launch or terminate transitions.
+
+Lifecycle hooks enable you to `perform custom actions by pausing instances` as an Auto Scaling group launches or terminates them.
+
+When an instance is paused, it remains in a wait state either until you complete the lifecycle action using the
+
+- `complete-lifecycle-action command` or
+- `CompleteLifecycleAction operation` or
+- `until the timeout period ends` (one hour by default).
+
+Lifecycle hooks can also be integrated to
+
+- EventBridge or
+- SNS Notifications
+
+### Workflow
+
+During Scale Out, the lifecycle hooks `PENDING: Wait` and `PENDING: Proceed` allows to perform custom actions.
+
+Similarly during Scale In, the lifecycle hook `Terminating: Wait` and `Terminating: Proceed` allows to perform custom actions.
+
+![img](./imgs/scaling/ASGArchitecture3.webp)
+
+---
