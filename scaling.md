@@ -221,7 +221,7 @@ Health check with NLB
 
 Also,
 
-    NLB's can have static IPs, so can be whitelisted
+    NLB's can have static IPs, so can be whitelisted (!important)
 
 Can Forward TCP to instances.
 
@@ -320,6 +320,8 @@ You can manually set the values for the ASG and it will set the number of instan
    - Stepped Scaling can be used to add or remove incrementally
    - Target Tracking can be used to scale using aggregate CPU, network, `request count per target`, etc
 4. Cooldown Periods is used to wait between scaling actions (Since there is minimum billing period after an instance is provisioned, regardless how long it was used)
+
+> Scaling Policies can `optionally` be defined in ASG.
 
 ---
 
@@ -491,4 +493,13 @@ Stage 5: [Enable elasticity via a ASG & ALB and fix wordpress - hardcoded WPHOME
 Stage 6: Move DB to Aurora Cluster with 2 readers (Update wordpress to point to writer endpoint)
 Stage 7: Cleanup
 
-NOTE: Even if there are 2 readers created for Aurora, only one reader endpoint will be created. Additional can be created manually using custom endpoint feature.
+**NOTE:** Even if there are 2 readers created for Aurora, only one reader endpoint will be created. Additional can be created manually using custom endpoint feature.
+
+---
+
+# Misc
+
+SSL Offload
+
+- HTTPS to the load balancer
+- HTTP to the instances (origin)
