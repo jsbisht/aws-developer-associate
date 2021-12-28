@@ -109,7 +109,7 @@ Events can be sent to EventBridge
 - Alternative to Jenkins
 - Uses `docker` for build environment and can be customized
 - Integrates with AWS Services such as KMS, IAM, VPC(for networking), CloudTrail(for api auditing) and S3
-- Gets source from GitHub, CodeCommit, CodePipeline, S3, etc
+- Gets source from GitHub, CodeCommit, CodePipeline, `S3`, etc
 
 ## Pricing
 

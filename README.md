@@ -15,7 +15,7 @@
 - [Advanced Storage (EFS)](./efs.md)
 - [Scaling and Load Balancers (ELB)](./scaling.md)
 - [Developer Tools](./dev-tools.md)
-- [Event Driven and Serverless]
+- [Event Driven and Serverless](./event-driven.md)
 - [Lambda]
 - [API Gateway]
 - [Databases (NoSQL)]
