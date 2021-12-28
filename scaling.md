@@ -289,6 +289,8 @@ Key properties defined for an ASG are:
 
 Role of an ASG is to keep the number of instances at Desired capacity by provisioning or terminating instances.
 
+---
+
 ## Example
 
 ASG is under a VPC and runs across one or more subnets.
@@ -298,6 +300,8 @@ It uses either a Launch Template (selected version) or Launch Configuration.
 You can manually set the values for the ASG and it will set the number of instances using LT or LC.
 
 ![img](./imgs/scaling/ASGArchitecture1.webp)
+
+---
 
 ## Ways to adjust values of ASG
 
@@ -309,6 +313,28 @@ You can manually set the values for the ASG and it will set the number of instan
      - Memory
    - Stepped Scaling can be used to add or remove incrementally
    - Target Tracking can be used to scale using aggregate CPU, network, `request count per target`, etc
-4. Cooldown Periods is used to wait between scaling actions (Since there is minimum billing period after an instance is provisioned)
+4. Cooldown Periods is used to wait between scaling actions (Since there is minimum billing period after an instance is provisioned, regardless how long it was used)
+
+---
 
 ## Health Checks
+
+By default, ASG also checks the health of instances that they provision. This is done by using the `EC2 status checks`.
+
+If an instance fails, EC2 will let ASG know about this failure. AGS will then terminate the current instance and provision a new EC2 instance in its place. This is called `self healing`.
+
+### Self Healing using LC or LT
+
+[When is the following required?]
+
+If you have a LT or LC which can provision an EC2 instance
+
+- Use it to provision an ASG
+- Set the ASG to use multiple subnets in multiple AZs
+- Set the ASG to use minimum, desired and maximum as 1 instance.
+
+You get a simple instance recovery.
+
+> Since ASG work across AZs, on failure of EC2, another one can be provisioned in another AZ
+
+---

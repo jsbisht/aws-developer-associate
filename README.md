@@ -12,8 +12,8 @@
 - [Route 53](./route53.md)
 - [CloudFront](./cloud-front.md)
 - [Databases (SQL)](./database.md)
-- [Advanced Storage](./efs.md)
-- [Scaling and Load Balancers](./scaling.md)
+- [Advanced Storage (EFS)](./efs.md)
+- [Scaling and Load Balancers (ELB)](./scaling.md)
 - [Developer Tools]
 - [Event Driven and Serverless]
 - [Lambda]
