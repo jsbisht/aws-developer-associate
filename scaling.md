@@ -338,3 +338,76 @@ You get a simple instance recovery.
 > Since ASG work across AZs, on failure of EC2, another one can be provisioned in another AZ
 
 ---
+
+## ASG with Load Balancer
+
+Consider a user connected to the website through ELB. ELB has a listener configured with the blog and points at a target group.
+
+Instead of statically adding instances to the target group, we can use an ASG integrated with the target group.
+
+    Instances are provised or terminated within ASG.
+    They are automatically added or removed in the target group of the ELB.
+
+![img](./imgs/scaling/ASGArchitecture2.webp)
+
+ASG can use the `Load Balancer health checks` rather than EC2 status checks.
+
+- Load Balancer health checks are application aware when compared to EC2 status checks.
+
+---
+
+## Scaling Processes within ASG
+
+There are a number of operations performed by ASG. These can be set to either:
+
+- SUSPEND or
+- RESUME
+
+### Launch
+
+- If set to `SUSPEND`, the ASG wont scale out if any alarms or scheduled oeprations take place
+
+### Terminate
+
+- If set to `SUSPEND`, the ASG wont terminate any instances
+
+### AddToLoadBalancer
+
+This controls if any instances launched is added to the Load Balancer
+
+### AlarmNotification
+
+This controls if ASG will react to any CloudWatch alarms
+
+### AZRebalance
+
+This balances instances evenly across all the AZs
+
+### HealthCheck
+
+Controls if instance health check is on or off o`n the entire Auto Scaling Group`
+
+### ReplaceUnhealthy
+
+Terminate unhealthy and replace
+
+### ScheduledActions
+
+Whether ASG will perform any scheduled action or not
+
+### Standby
+
+Set one or more EC2 instance as Standby (or InService), during maintainence so that are not affected by ASG actions
+
+---
+
+## ASG Considerations
+
+    ASG defines WHEN are WHERE
+
+    LT defines WHAT configuration instances are created with
+
+- Autoscaling Groups are free, only resources created are billed
+- Use cooldowns to avoid rapid scaling
+- Use smaller instances to save cost
+- Use ASG with ALB's to abstract away instance dependency
