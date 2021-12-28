@@ -250,7 +250,7 @@ LC and LT lets you define anything that you define while launching a EC2 instanc
 
 - AMI, Instance Type, Storage, Key Pair
 - Networking and Security Groups
-- Userdata and IAM Role
+- `Userdata` and IAM Role
 
 > Launch Configuration and Templates are not editable
 
@@ -272,6 +272,12 @@ Launch templates
 - Can be used to save time when provisioning EC2 instances from the console UI / CLI.
 
 > If you need to adjust a configuration, you must make a new one and launch it.
+
+## Considerations
+
+If you launching instance using LT, you need to specify the subnet to be used.
+
+If you are using ASG with LT, ASG will choose the subnet automatically.
 
 ---
 
@@ -472,3 +478,17 @@ Similarly during Scale In, the lifecycle hook `Terminating: Wait` and `Terminati
 ![img](./imgs/scaling/ASGArchitecture3.webp)
 
 ---
+
+# Demos
+
+https://learn.cantrill.io/courses/1101194/lectures/27895184
+
+Stage 1: Manually create wordpress instance (running commands manually)
+Stage 2: Create wordpress instance using LT (running commands through user data)
+Stage 3: Instead of instance based DB, move it to RDS and `Update the LT` (create subnet group that RDS uses and create RDS database)
+Stage 4: Split out the WP filesystem(`wp-content`) into EFS and Update the LT (for ec2 to connect to efs we need to install `amazon-efs-utils`)
+Stage 5: [Enable elasticity via a ASG & ALB and fix wordpress - hardcoded WPHOME (Create ELB, `change LT from ip address to ALB dns name`, connect the ALB to public subnet in each AZ)](https://learn.cantrill.io/courses/aws-certified-developer-associate/lectures/27895189)
+Stage 6: Move DB to Aurora Cluster with 2 readers (Update wordpress to point to writer endpoint)
+Stage 7: Cleanup
+
+NOTE: Even if there are 2 readers created for Aurora, only one reader endpoint will be created. Additional can be created manually using custom endpoint feature.
