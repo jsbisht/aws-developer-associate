@@ -160,3 +160,109 @@ Lambda uses:
 for its monitoring and logging.
 
     CloudWatch Logs require permissions via Execution Role
+
+---
+
+## Versions
+
+Lambda function has version which is a combination of code and configuration of the lambda function.
+
+    Every version of the lambda function is immutable
+
+- Each version is immutable and cannot change once published
+- Every lambda function version gets its own ARN (Amazon Resource Name)
+
+`$latest` points to the latest version. (So this is mutable and keeps changing)
+
+`Alias` such as DEV, STAGE, PROD point to a version. (This is mutable and can point to a differnt verion)
+
+---
+
+# AWS Lambda Invocation
+
+Types of invocations
+
+1. Synchronous
+2. Asynchronous
+3. Event Source Mapping
+
+## Synchronous Invocation
+
+    Used when a user is performing the invocation
+
+Here lambda function is directly invoked via:
+
+- ClI/API or
+- Clients communicating with API Gateway
+
+In this type of invocation
+
+- The client waits for the response
+- The client needs to handle the errors and retries
+
+![img](./imgs/event-driven/Lambda6.webp)
+
+---
+
+## Asynchronous Invocation
+
+    Used when an AWS service is performing the invocation
+
+Here is an example where S3 invokes Lambda function, which will perform operations on the object data and then store it in DynamoDB.
+
+- S3 isnt waiting for the Lambda function to complete
+- Lambda function will perform retries (re-processing) in case of failures
+- Lambda will perform 0 to 2 retries
+
+![img](./imgs/event-driven/Lambda7.webp)
+
+### Idempotent
+
+Lambda function needs to be idempotent, so that retries doesn't impact the system in incorrect way.
+
+Consider the example of increasing customer balance by $10.
+
+It can be done using adding $10. With every retry you will increase the customer balance by 10, which is incorrect.
+
+Or setting it directly to a value say $110. This is idempotent.
+
+### Dead Letter Queue (DLQ)
+
+Events can be sent to dead letter queue after repeated failed processing.
+
+### Post Processing
+
+Events processed by Lambda, either failed or sucessful, can now be sent to
+
+- SQS
+- SNS
+- Lambda &
+- EventBridge
+
+---
+
+## Event Source Mapping
+
+This is used on streams or queues, which dont support invocation of lambda, produced by
+
+- Kinesis
+- DynamoDB streams
+- SQS
+
+Event Source Mapping `reads/polls` the stream or queue and deliver `event batches` to lambda.
+
+- Event batches either are processed OK or FAIL as a batch
+
+![img](./imgs/event-driven/Lambda8.webp)
+
+### Security
+
+Event Source Mapping uses permission from the Lambda Execution Role.
+
+    These permission are required to interact with the event source
+
+### DLQ
+
+SQL Queues and SNS topics can be used for any discarded failed event batches
+
+---
