@@ -17,7 +17,7 @@
 - [Developer Tools](./dev-tools.md)
 - [Event Driven and Serverless](./event-driven.md)
 - [Lambda]
-- [API Gateway]
+- [API Gateway](./gateway.md)
 - [Databases (NoSQL)]
 - [Elastic Beanstalk]
 

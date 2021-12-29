@@ -485,3 +485,81 @@ Thus, it is a best practice to always set the retention period of a dead-letter 
 - The expiration of a message is always based on its original enqueue timestamp. When a message is moved to a dead-letter queue, the enqueue timestamp is unchanged.
 
 ---
+
+# SQS vs SNS
+
+SNS is a distributed publish-subscribe system. _Messages are pushed to subscribers as and when they are sent by publishers to SNS_.
+
+SQS is distributed queuing system. Messages are not pushed to receivers. Receivers have to poll SQS to receive messages. Messages can be stored in SQS for short duration of time.
+
+## Key Differences
+
+**Entity Type**
+
+- SQS : Queue (similar to JMS, MSMQ).
+- SNS : Topic-Subscriber (Pub/Sub system).
+
+**Message consumption**
+
+- SQS : Pull Mechanism — Consumers poll messages from SQS.
+- SNS : Push Mechanism — SNS pushes messages to consumers.
+
+**Persistence**
+
+- SQS : Messages are persisted for some duration is no consumer available. The retention period value is from 1 minute to 14 days. The default is 4 days.
+- SNS : No persistence. Whichever consumer is present at the time of message arrival, get the message and the message is deleted. If no consumers available then the message is lost.
+
+In SQS the message delivery is guaranteed but in SNS it is not.
+
+**Consumer Type**
+
+- SQS : All the consumers are supposed to be identical and hence process the messages in exact same way.
+- SNS : All the consumers are (supposed to be) processing the messages in different ways.
+
+---
+
+# Step Functions
+
+There are many problems with lambdas limitations that can be solved with
+a state machine.
+
+    If time between execution steps is longer than 15 minutes, we use Step Functions
+
+Step functions is a product which lets you build long running serverless workflow based applications within AWS which integrate with many AWS services.
+
+Step functions lets you create state machines (serverless workflow)
+
+- Start
+- States
+- End
+
+Maximum duration for state machine execution is 1 year. (Eg. online order followed by manual fulfillment of the order will drive the state machine in a long running fashion)
+
+Two types of workflows:
+
+- Standard workflow (standard is the default and has a 1 year workflow)
+- Express workflow (for IOT and highly transactional such as IoT and can run for 5 mintues)
+
+Started via
+
+- API Gateway
+- IOT Rules
+- EventBridge
+- Lambda
+
+Amazon States Languate (ASL)
+
+- JSON template (can be used create and export state machines)
+
+These use IAM Roles for permissions.
+
+## States
+
+- Succeed & Fail (will wait until either is achieved)
+- Wait (will wait until specific date and time or period of time)
+- Choice (different path is determined based on an input)
+- Parallel (will create parallel branches based on a choice)
+- Map (accepts a list of things)
+- Task (Single unit of work - can be integrated with Lambda, Batch, dynamoDB, ECS, SNS, SQS, Step Functions)
+
+---
