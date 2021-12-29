@@ -32,3 +32,10 @@ References:
 
 - https://aws.amazon.com/certification/certified-developer-associate/
 - https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html
+
+---
+
+- Identity Pools
+- User pools
+
+https://docs.aws.amazon.com/cognito/latest/developerguide/images/scenario-cup-cib2.png
