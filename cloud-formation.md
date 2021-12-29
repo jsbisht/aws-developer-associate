@@ -143,10 +143,10 @@ Join or split strings
 
 Get list of AZs and Select one from the list
 
+    If you have badly configured VPC (say default VPC where you have deleted subnets), then GetAZs might not return all the AZ's.
+
 - Fn::GetAZs
 - Fn::Select
-
-  If you have badly configured VPC (say default VPC where you have deleted subnets), then GetAZs might not return all the AZ's.
 
 ![img](./imgs/cloud-formation/CloudFormationFnGetAZs.webp)
 
@@ -156,10 +156,10 @@ Provision resources based on conditional check
 
 Encode data such as user data and Substitute information based on runtime information
 
+    Self references is invalid with Sub function. As we cannot pass the reference of the EC2 instance before its created.
+
 - Fn::Base64
 - Fn::Sub
-
-  Self references is invalid with Sub function. As we cannot pass the reference of the EC2 instance before its created.
 
 Sub function can be passed:
 
@@ -272,6 +272,8 @@ To send success or failure signals, we use a utility `cfn-signal` running on the
 
 ### Creation Policy
 
+Associate the CreationPolicy attribute with a resource to prevent its status from reaching create complete until AWS CloudFormation receives a specified number of success signals or the timeout period is exceeded.
+
 To signal creation of EC2 or Auto Scaling Groups, you should use CreationPolicy.
 
 - A CreationPolicy is specifically tied to that resource.
@@ -285,14 +287,14 @@ In the following example:
 
 ### Wait Conditions
 
-Just like CreationPolicy, the allow resource creation to be paused until timeout or signal is received.
+Just like CreationPolicy, this allows resource creation to be paused until timeout or signal is received.
 
-WaitCondition can depend of other resources. And other resources can depend of WaitCondition.
+WaitCondition can depend on other resources. And other resources can depend of WaitCondition.
 
 - It can be used a progress gate. So that checks cannot be passed until that signals are received.
 - WaitCondition will not proceed to CREATE_COMPLETE until the timeout or signal is received.
 
-WaitCondition relies on WaitHandle, which `generates a presigned URL to send signal`.
+**WaitCondition relies on WaitHandle**, which `generates a presigned URL to send signal`.
 
 - Since its presigned, no credentials are required to use it.
 
@@ -313,7 +315,7 @@ Resources in a single stack `share a lifecycle`. In an isolated stack the resour
 
 - Designing CFN stack this way is fine until you hit the limits.
 - There is limit of 500 resources per stack.
-- Also, you can't easily resource resources.
+- Also, you can't easily reference resources.
 - Also, you can't easily reference other stacks.
 
 For complex projects, you are recommended to use Nested Stacks or Cross-Stack references.
@@ -338,7 +340,7 @@ The `Root Stack` can take the `Outputs` from one nested stack (VPCSTACK) and pas
 
 - The advantage of using nested stack is that the for each nested template can be reused in other stacks.
 
-  - In doing so, you are resuing the CloudFormation template code but not the actual resources created by the reuse of the template.
+  - In doing so, you are reusing the CloudFormation template code but not the actual resources created by the reuse of the template.
   - This is unlike what happens with the usage of Cross-Stack reference.
 
 - Nested Stacks are usedful when you want to create resources that are `all part of one solution` and are `lifecycle linked`.
@@ -364,7 +366,7 @@ Outputs though can be exported, making them visible from other stacks.
 - We use `Ref` function to reference resource in the same stack
 - We use `Fn::ImportValue` instead of Ref to use exports of one stack into another
 
-![img](./imgs/cloud-formation/CloudFormationCrossStackReferences2.png)
+![img](./imgs/cloud-formation/CloudFormationCrossStackReferences2.webp)
 
     Cross region or Cross account usage of exports doesnt work.
 
@@ -381,7 +383,7 @@ StackSets are a feature of CloudFormation allowing infrastructure to be deployed
 
 - This can be done without having to change account, pass credentials for each or change regions.
 
-StackSets are containers in an admin account.
+StackSets act as containers, in an admin account.
 
 - These containers contains many stack instances
 - Stack instances are reference to stack in a single region, in a single account
@@ -441,7 +443,7 @@ So, say you have an EC2 instance with an attached EBS volume created using CFN. 
 
 ## CloudFormation Stack Roles
 
-CloudFormation Stack Roles is used to control what identities (say Phil) with lesser permissions can do using CFN, allowing to achive role seperation.
+CloudFormation Stack Roles is used to control `what identities (say Phil) with lesser permissions can do using CFN`, allowing to achive role seperation.
 
 While using CFN to create stack that creates physical resources, permission for actions on stack and those physical resources is needed.
 
@@ -524,10 +526,10 @@ Change sets allow you to preview how proposed changes to a stack might impact yo
 
 Custom resources enable you to write custom provisioning logic in templates that AWS CloudFormation runs anytime you create, update (if you changed the custom resource), or delete stacks.
 
+    Custom resources can be idenfified in the template using `Type: "Custom:<resource-name>`.
+
 - CFN doesnt support everything
 - Custom Resources let CFN integrate with anything it doesn't yet or doesnt natively support
-
-  Custom resources can be idenfified in the template using `Type: "Custom:<resource-name>`.
 
 ```yaml
 Resources:
@@ -557,7 +559,7 @@ Consider for example if you try to delete a bucket created with CFN containing o
 
 Or you can use Custom Resources to provision non-aws resources.
 
-![img](./imgs/CloudFormationCustomResources.webp)
+![img](./imgs/cloud-formation/CloudFormationCustomResources.webp)
 
 In the example above, when you create a bucket using custom resource
 

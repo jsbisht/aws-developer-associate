@@ -25,3 +25,10 @@
 
 ⬜ Create hands-on exercises covering all the key topics
 ⬜ Create cheatsheet for quick revision
+
+---
+
+References:
+
+- https://aws.amazon.com/certification/certified-developer-associate/
+- https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html
