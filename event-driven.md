@@ -627,4 +627,29 @@ Kinesis Data Firehose is a fully managed service to load data for data lakes, da
 
 ### Architecture
 
+[On the right green box] It can deliver data to:
+
+- HTTP (external service providers)
+- Splunk
+- Redshift
+- ElasticSearch
+- Destination Bucket
+
+[The red lines] Data from producers into Kinesis Data Stream can be integrated into Kinesis Data Firehose.
+
+[The purple lines] If you arent using any feature of Kinesis Data Stream, you can send the data directly into Kinesis Data Firehose.
+
 ![img](./imgs/event-driven/KinesisDataFirehose.webp)
+
+Firehose offers near realtime delivery
+
+    Delivery when buffer size of 1MB fills
+
+    Or Buffer interval in seconds passes
+
+[The pink lines] The data can be sent to `Lambda for transformation` as well as `source records` can be sent to S3 for storage.
+
+[The blue lines] Transformed records can be sent to HTTP, Splunk, Elastic Search or a Destination Bucket.
+
+- While transformed records are being sent to `Redshift`, an intermediate S3 bucket is used
+- Redshift copy command is used to pull the data from the bucket into S3
