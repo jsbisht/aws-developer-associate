@@ -653,3 +653,42 @@ Firehose offers near realtime delivery
 
 - While transformed records are being sent to `Redshift`, an intermediate S3 bucket is used
 - Redshift copy command is used to pull the data from the bucket into S3
+
+## Kinesis Data Analytics
+
+Kinesis Data Analytics capable of operating in realtime on high throughput streaming data.
+
+- The real time processing is done using SQL
+- Ingests from Kinesis Data Streams or Firehose
+- Can statically reference data from S3 bucket
+
+Can deliver data to firehose indirectly any destination which firehose support, but the data becomes near realtime.
+
+- S3
+- Redshift
+- ElasticSearch
+- Splunk
+
+It also supports AWS Lambda and Kinesis Data Streams as a destination and the data remains realtime.
+
+- Can perform transformation of data as it passes through using Lambda
+
+### Architecture
+
+Inside the Kinesis Data Analytics application we define inputs and outputs.
+
+The data from Source Stream can use reference data from S3 bucket.
+
+Kinesis Analytics Application uses SQL using Source Stream data with Reference Data as input and produces output stream data.
+
+![img](./imgs/event-driven/KinesisDataAnalytics.webp)
+
+The output stream data can be sent to either Kinesis Stream or Kinesis Firehose.
+
+- This can be sent to consumers in case of Kinesis Stream (remains realtime data)
+- This can be sent to destinations in case on Kinesis Firehose (becomes near realtime data)
+
+### Use Cases
+
+- Streaming data that needs real-time SQL processing
+- Time series data
