@@ -84,3 +84,11 @@ Now Cognito does not store the credentials by the IDP or forward this to your mo
 The advantage of this is identity pool needs to be configured only with one identity provider (User Pool).
 
 ![img](./imgs/cognito/CognitoUserAndIdentityPools.webp)
+
+---
+
+## Demo
+
+This is after s3 bucket for frontend and google auth setup.
+
+https://learn.cantrill.io/courses/1101194/lectures/30290121
