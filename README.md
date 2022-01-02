@@ -19,7 +19,7 @@
 - [Cognito](./cognito.md)
 - [Lambda](./lambda.md)
 - [API Gateway](./gateway.md)
-- [Databases (NoSQL)]
+- [Databases (NoSQL)](./dynamodb.md)
 - [Elastic Beanstalk]
 
 ---
