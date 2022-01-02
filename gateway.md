@@ -46,7 +46,7 @@ API gateway also integrates with CloudWatch to store logging and metrics based d
 
 API gateway also provides a cache to reduce the number of calls to backend.
 
-![img](./ss/api-gateway-overview.webp)
+![img](./imgs/gateway/APIGW_Overview.webp)
 
 ### Authentication
 
@@ -125,3 +125,21 @@ Some errors are resolved if you simply retry the same request.
     Cache is defined per stage within API Gateway
 
 ![img](./ss/api-gateway-cache.webp)
+
+---
+
+## Methods and Resources
+
+Note the parts of URL
+
+- API Gateway Endpoint (https://xxx.review-api.us-east-1.amazonaws.com)
+- Stage (/dev)
+- Resource (/listreviews)
+
+![img](./imgs/gateway/APIGW_MethodsAndResources.webp)
+
+    Any configuration changes within an API Gateway doesnt take effect until it is deployed
+
+Within each resource you have methods such as GET, POST.
+
+- you also define the integration with the method such as Lamdba, HTTP or AWS Service
