@@ -16,6 +16,7 @@
 - [Scaling and Load Balancers (ELB)](./scaling.md)
 - [Developer Tools](./dev-tools.md)
 - [Event Driven and Serverless](./event-driven.md)
+- [Cognito](./cognito.md)
 - [Lambda]
 - [API Gateway](./gateway.md)
 - [Databases (NoSQL)]
