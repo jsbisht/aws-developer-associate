@@ -1,43 +1,102 @@
+# API Gateway
+
+## Overview
+
 https://learn.cantrill.io/courses/1101194/lectures/27852538
 
-- errors list in this video
-- and https://docs.aws.amazon.com/apigateway/api-reference/handling-errors/#api-error-codes
+### Considerations
 
-### API Gateway
+API Gateway acts as an endpoint or entrypoint for your applications.
 
-Application Programming Interface (API)
+    It sits between applications that uses API's and backend services
 
-This is a way that applications or services can communicate with each other.
+API Gateway features include:
 
-Endpoints are used to access services. Each service has its own endpoint
-in its own region.
+- High availability
+- Scalable
+- Handles authorisation
+- Throttling (can restrict how often users can access API)
+- Caching
+- CORS (supports cross domain restrictions and configuration)
+- Transformations
+- OpenAPI spec (makes it easier to create defination files)
+- Direct Integration
 
-When you request AWS stops an EC2 instance, the message is set to the API
-in that region for that resource.
+It can connect to services in AWS or on-premises.
 
-APIs also perform authentication using passwords or keys. API authorizes
-each service and needs your permissions verified each time.
+It supports
 
-#### Authentication
+- HTTP APIs
+- REST APIs
+- WebSockets APIs
 
-#### Authorization
+### Architecture
 
-API gateway is an AWS managed service that provides managed API endpoints.
-Allows you to create, publish, monitor, and secure APIs as a service.
+Applications or APIs on the left connect to API Gateway using the API endpoint address.
 
-Billed based on the number of API calls as well as data transfered.
+API gateway acts as a connector of application using the endpoint and the backend services listed on the right.
 
-This can be used for serverless architecture to provide an entry point
-for that design.
+API gateway goes through three phases:
 
-This is great during an architecture evolution.
+1. Request
+2. Integrations
+3. Response
 
-Step 1:
-Create a managed API and point at the existing monolithic application.
+API gateway also integrates with CloudWatch to store logging and metrics based data.
 
-Step 2:
-Using API gateway allows the buisness to evolve along the way slowly.
-This might move some of the data to fargate and aurora architecture.
+API gateway also provides a cache to reduce the number of calls to backend.
 
-Step 3:
-Move to a full serverless architecture with DynamoDB
+![img](./ss/api-gateway-overview.webp)
+
+### Authentication
+
+API gateway support a range of authentication methods.
+
+You can make the API complete open access, so no authentication is required.
+
+API gateway can use AWS Cognito User Pools for authentication.
+
+- Client authenticates with Cognito and receives a token
+- The token is then passed in the subsequent requests to API gateway
+- API gateway validates the token with Cognito
+
+API gateway can also be extended to use Lambda based authorisation (earlier known as custom authoriser).
+
+- Client calls API gateway with a bearer token
+- API gateway calls Lambda authorizer to validate the token
+- On successful validation, it r`eturns an IAM policy and principal identifier` to API gateway. Which `handles the request via Lambda integration`.
+- On failed validation, it returns `403 ACCESS_DENIED` to the client
+
+![img](./ss/api-gateway-authentication.webp)
+
+### Endpoint Types
+
+Edge-Optimized
+
+- Requests are routed to nearest CloudFront POP (Point of Presense)
+
+### Error Codes (Client and Server Errors)
+
+A response code of 2xx indicates the operation was successful. Other error codes indicate either a client error (4xx) or a server error (5xx).
+
+Some errors are resolved if you simply retry the same request.
+
+| HTTP Status Code | Error                                                                               | code Retry        |
+| ---------------- | ----------------------------------------------------------------------------------- | ----------------- |
+| 400              | Bad Request Exception                                                               | No                |
+| 403              | Access Denied Exception                                                             | No                |
+| 404              | Not Found Exception                                                                 | No                |
+| 409              | Conflict Exception                                                                  | No                |
+| 429              | Limit Exceeded Exception                                                            | No                |
+| 429              | Too Many Requests Exception                                                         | Yes               |
+| 502              | Bad Gateway Exception                                                               | Yes if idempotent |
+|                  | usually for an incompatible output returned from a Lambda proxy integration backend |                   |
+|                  | occasionally for out-of-order invocations due to heavy loads                        |                   |
+| 503              | Service Unavailable Exception                                                       | Yes               |
+| 504              | Endpoint Request Timed-out Exception                                                | Yes if idempotent |
+
+### Caching
+
+    Cache is defined per stage within API Gateway
+
+![img](./ss/api-gateway-cache.webp)
