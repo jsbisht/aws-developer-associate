@@ -77,7 +77,7 @@ Can purchase reserved capacity with a cheaper rate for a longer term commit.
 
 ---
 
-## DynamoDB Operations, Consistency, and Performance
+## DynamoDB Operations
 
 ### Reading and Writing
 
@@ -138,3 +138,97 @@ Scan moves through the table item by item consuming the capacity of every item.
 - It adds up all the values scanned and will charge rounding up.
 
 ![img](./imgs/dynamo-db/DDB-Scan.webp)
+
+---
+
+## DynamoDB Consistency
+
+Types of consistency options:
+
+- Eventually Consistent: easier to impliment and scales better
+- Strongly Consistent (Immediate): more costly to achieve
+
+NOTE: Eventually consistent reads are charged half the price of Strongly consistent reads
+
+DyanamoDB consists of `storage node` in each availability zone. Following example illustrates a scenario where we have 3 AZs containing one storage node each, having same data.
+
+One storage node is chosen as the `Leader`.
+
+    Strongly consistent reads connect to leader node to get the latest data
+
+![img](./imgs/dynamo-db/DDB-Consistency-Model.webp)
+
+In the scenario above Bob updates an attribute of an item. DyanamoDB directs the write at the leader storage node, which is elected from the three storage nodes.
+
+- the leader node replicates the data to other nodes, which usually happens within milliseconds
+
+So, in the above scenario a user reads just before the storage node is updated, user would get the stale data.
+
+### WCU Calculation
+
+Say you need to store 10 items per second with 2.5K average size per item. Calculate WCU.
+
+```
+1 KB item = 1 WCU
+
+2.5 KB / 1 KB = 3 KB per item (round up)
+
+3KB per item = 3 WCU
+
+10 items per second = 3 WCU x 10 = 30 WCU
+```
+
+### RCU Calculation
+
+Need to retrieve 10 items per second with 2.5K average size per item. Calculate RCU.
+
+```
+4 KB item = 1 RCU
+
+2.5 KB / 4 KB = 4 KB per item (round up)
+
+10 items per second = 1 RCU x 10 = 10 WCU
+
+Strongly consistent: 10 RCU
+Eventually conssitent: 5 RCU
+```
+
+---
+
+## DynamoDB Indexes
+
+Great for improving data retrival in DynamoDB.
+
+Query can only work on 1 partition key value at a time.
+
+Indexes are a way to provide an alternative view on table data.
+
+You have the ability to `choose which attributes are projected`
+to the table.
+
+### Local Secondary Indexes (LSI)
+
+Alternative view on base table data. These must be created with a
+table in the beginning.
+
+    LSI cannot be added after the table is created.
+
+Maximum of 5 LSI's per base table.
+
+LSI allows `using alternative sort key` on the table but the same partition key.
+
+`Shares the RCU and WCU with the table`, if the main table is using provisioned capacity.
+
+Attributes that can be projected into the LSI has the following options:
+
+- ALL
+- KEYS_ONLY
+- INCLUDE (lets you choose attributes)
+
+#### Example
+
+As we know scan operation for getting the Sunny Days from the base table is time consuming and costly. We can create LSI during the base table creation instead, using the _sunny day_ attribute as the sort key.
+
+![img](./imgs/dynamo-db/DDB-Local-Secondary-Indexes-LSI.webp)
+
+The indexes are sparse. Only items that has value for the attribute used as sort key are included for indexing.
