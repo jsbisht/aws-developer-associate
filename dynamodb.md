@@ -385,3 +385,101 @@ Every DAX cluster, similar to RDS, has an endpoint which is load balanced across
 When writing data to DAX, it can use write-through. Data is written to the database, then written to DAX.
 
 - If data is being retrived from DyanamoDB during cache miss, it will be written to primary node of the cluster
+
+---
+
+## DynamoDB Global Tables
+
+Global tables provide multi-master cross-region replication.
+
+- no table is considered as master
+- no table is considered as replica
+- all tables are considered the same
+
+To create a Global Table
+
+- Tables are created in multiple AWS regions.
+- In one of the tables, you configure the links between all of the tables.
+- DynamoDB will enable replication between all of the tables.
+- So tables become table replica of a global table.
+
+During a conflict between the tables
+
+- last writer wins
+- its changes are then replicated across
+
+### Considerations
+
+`Reads and Writes can occur to any region`.
+
+Replication is generally sub-second and depends on the region load.
+
+Strongly Consistent reads **only** in the same region as writes.
+
+- **Global eventual consistency** but can have same region strongly consistent
+
+Provides Global HA and disaster recovery easily.
+
+---
+
+## DynamoDB Time-To-Live (TTL)
+
+DynamoDB Time to Live (TTL) allows you to define a per-item timestamp to determine `when an item is no longer needed` or `when lose relevance after certain time`.
+
+- After specified timestamp, DynamoDB deletes the item from your table without consuming any write throughput.
+- TTL is provided at no extra cost as a means to reduce stored data volumes by retaining only the items that remain current for your workload’s needs
+
+If you want an item to expire say after one week, you need to put appropriate timestamp in the attribute you select for TTL.
+
+### Scanning
+
+A process periodically run on the partitions for items that have expired based on the TTL attribute.
+
+- Items where the TTL attribute is older than current time, they are set to expired
+- These are not deleted immediately
+
+Another process periodically runs on the partitions
+
+- It scans for expired items
+- And deletes the items that have expired
+- They are also `removed from indexes`
+
+### Streams
+
+    A delete is added to streams if enabled
+
+The stream allows to perform any operation based on the deletions.
+
+### Performance
+
+The delete operations run in the background and dont cause any impact on table performance.
+
+Also, these operations arent chargable.
+
+---
+
+# ElastiCache
+
+Elasticache is a managed in-memory cache which provides a managed implementation of the `redis` or `memcached` engines.
+
+Its useful for
+
+- read heavy workloads
+- scaling reads in a cost effective way
+- allowing for externally hosted user session state (stateless servers).
+
+To add ElastiCache into the application, `code changes are required`.
+
+- Application needs to use the cache
+- Fetch the data from Database on cache miss
+
+## Redi vs MemcacheD
+
+|                      Memcached                       | Redis                                            |
+| :--------------------------------------------------: | ------------------------------------------------ |
+|           Simple data structures (Strings)           | Advanced Data Structures                         |
+|                    No replication                    | Multi AZ                                         |
+| Multiple Nodes (Sharding) - split users across nodes | Supports Replication (Scale reads truely)        |
+|        No backups - as it has no persistence         | Supports backup and restores                     |
+|                    Multi-threaded                    | Transaction (Either all operations work or none) |
+|                                                      | Use redis for strong consistency                 |
