@@ -3,6 +3,7 @@
 Elastic Beanstalk is a Platform as a Service environment which can create and manage infrastructure for application code.
 
 - User provides code and EB handles the environment
+- EB does create resources behind the scene (you can check for EC2 instances created)
 - It also support customization to control how you want the infrastructure
 - Any custom defination about the infrastructure can be committed along with the source code
 
@@ -36,6 +37,26 @@ Custom platforms can be created using packer
 
 ## Architecture
 
+```
+application
+
+    |
+    |
+    V
+
+one or more environment
+
+    |
+    |
+    V
+
+each environment has one or more application versions
+
+    +
+
+each environment has one or more configuration
+```
+
 Application Versions
 
 - These are specific labelled version of deployable code for an application
@@ -44,6 +65,8 @@ Application Versions
 Environments are containers of infrastructure and configuration for a specific application version
 
 - Here: PROCESSING, PROD, TEST
+
+### Environment Types
 
 Each environment is either
 
@@ -63,6 +86,12 @@ Both environment web and worker tier has Auto Scaling Groups within them.
 Web Server Tier scales based on the number of request to the ELB.
 
 Worker Tier scales based on the number of messages in the SQS queue.
+
+### Security
+
+Security group for the web server tier will be configured by EB to accept HTTP connections.
+
+Security group for the worker tier will be configured by EB to accept only connections from ELB.
 
 ### CNAME
 
@@ -86,3 +115,44 @@ User can connect to our application using the CNAME or the DNS name.
 - Databases within the environment are deleted, when environment is deleted
 
 ---
+
+## Deployment Policies
+
+### All at once
+
+- deploy all at once, brief outage
+
+![img](./imgs/beanstalk/EBDeployment_AllAtOnce.webp)
+
+### Rolling
+
+- deploy in rolling batches
+- you can pick the batch size
+- if you have 4 instances, when one instance is being updated, availability takes a 25% hit
+- there will be two version running simultaneosly during the update
+
+![img](./imgs/beanstalk/EBDeployment_Rolling.webp)
+
+### Rolling with additional batch
+
+- maintains 100% capacity during the deployment
+- there will be two version running simultaneosly during the update
+
+![img](./imgs/beanstalk/EBDeployment_RollingWithAdditionalBatch.webp)
+
+### Immutable
+
+- creates entirely new set of instances
+- a temporary autoscaling group is created behind the ELB
+- old environment is removed and the autoscaling group is updated
+- this is easiest to rollback, as you can commit to new environment only when new environment is tested sucessfully
+
+![img](./imgs/beanstalk/EBDeployment_Immutable.webp)
+
+### Traffic splitting
+
+- its same as immutable deployment
+- additionally it allows us to control the split of traffic between the versions
+- you can perform AB testing with this before moving completely (pink and blue color )
+
+![img](./imgs/beanstalk/EBDeployment_TrafficSplitting.webp)
