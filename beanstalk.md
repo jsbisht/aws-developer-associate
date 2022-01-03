@@ -156,3 +156,13 @@ User can connect to our application using the CNAME or the DNS name.
 - you can perform AB testing with this before moving completely (pink and blue color )
 
 ![img](./imgs/beanstalk/EBDeployment_TrafficSplitting.webp)
+
+---
+
+## Blue-Green Deployment
+
+You can also manually switch between environments without using any deployment policy.
+
+![img](./imgs/beanstalk/EBDeployment_BlueGreen.webp)
+
+---
