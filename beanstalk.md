@@ -166,3 +166,149 @@ You can also manually switch between environments without using any deployment p
 ![img](./imgs/beanstalk/EBDeployment_BlueGreen.webp)
 
 ---
+
+## Elastic Beanstalk and RDS
+
+### RDS with EB environment
+
+To use RDS with Beanstalk you have two options:
+
+- Create an RDS instance within an EB environment
+- Create an RDS instance outside an EB environment
+
+#### RDS instance within an EB environment
+
+RDS is linked to the EB environment
+
+If you delete the environment, it deletes the RDS instance. This `results in data loss`.
+
+Also, different environment can have different RDS instance. And they will have different data.
+
+And RDS created within EB environment gets access to the following:
+
+- RDS_HOSTNAME
+- RDS_PORT
+- RDS_DB_NAME
+- RDS_USERNAME
+- RDS_PASSWORD
+
+#### RDS instance outside an EB environment
+
+In this case you will have to manually create the following properties:
+
+- RDS_HOSTNAME
+- RDS_PORT
+- RDS_DB_NAME
+- RDS_USERNAME
+- RDS_PASSWORD
+
+Environment can be changed without affecting the data within RDS.
+
+### Decoupling existing RDS within EB environment
+
+- Create RDS snapshot of existing RDS instance within EB environment
+- Enable delete protection on the existing RDS instance
+- Create a new EB environment with the same app version
+- Connect the new EB environment to the existing RDS instance
+- Swap environments (CNAME or DNS)
+- Terminate the old environment (This will delete everything except RDS instance due to delete protection)
+- Locate the DELETE_FAILED stack
+- Manually delete and pick to retain stuck resources
+
+---
+
+## Advanced Customisation via .ebextensions
+
+You can add AWS Elastic Beanstalk configuration files to your web application's source code to configure your environment and customize the AWS resources that it contains.
+
+- Configuration files are YAML- or JSON-formatted documents with a `.config file extension` that you place in a `.ebextensions` named folder and deploy in your application source bundle.
+
+---
+
+## Elastic Beanstalk and HTTPS
+
+To use HTTPS with Elastic Beanstalk you `need to apply a SSL Certificate to the Load Balancer` directly.
+
+This is done from:
+
+> EB Console => Environment => Load Balancer Configuration
+
+Alternatively this can be done using the `.extensions` feature via:
+
+> .extensions/securelistener-alb.config
+
+or
+
+> .extensions/securelistener-nlb.config
+
+You need to allow port 443 to access ELB.
+
+You need to allow Load Balancer to connect to the instances on the relevant port.
+
+---
+
+## Elastic Beanstalk Environment Cloning
+
+You can use an existing Elastic Beanstalk environment as the basis for a new environment by cloning the existing environment.
+
+For example, you might want to create a clone `so that you can use a newer version of the platform` branch used by the original environment's platform.
+
+By cloning an existing environment instead of creating a new environment, `you don't have to manually configure` option settings, environment variables, and other settings.
+
+- Elastic Beanstalk also creates a copy of any AWS resource associated with the original environment.
+- However, during the cloning process, Elastic Beanstalk doesn't copy data from Amazon RDS to the clone.
+
+You cant making any configuration changes (exceptions exist)
+
+- you can change the `environment URL`, `platform version` and `service role`
+- any changes done outside EB to the environment is considered as `unmanaged changes`
+- unmangaed changes are not included in the cloning process
+- after you create the clone environment, you can modify environment configuration settings as needed.
+
+---
+
+## EB and Docker
+
+You can run docker container within EB as
+
+- Single Container Deployment
+- Multi Container Deployment
+
+### Single Container Deployment
+
+- In this mode, you can run only one container on the docker host
+- This uses provisioned EC2 with docker, managed by Elastic Beanstalk
+- It doesnt use an ECS cluster
+
+To use this mode, you can provide:
+
+#### Dockerfile
+
+- EB will build a docker image and use this to run the container
+- Used when you want to create a new container image
+
+#### Dockerrun.aws.json
+
+- This file configures which image, ports and other docker attributes to use
+
+#### Docker-compose.yml
+
+- If you use docker compose
+
+### Multi Container Deployment
+
+- Used for multiple container applications
+- EB uses ECS which coordinates container deployment within environments
+- EB creates a ECS Cluster, within this `EC2 instances` are provisioned `along with an ELB for high availability`
+
+EB manages ECS tasks such as:
+
+- Cluster creation
+- Task defination
+- Task execution
+
+Any images to be used must be stored in a container registry such as ECR.
+
+![img](./imgs/beanstalk/EBDocker.webp)
+
+---
