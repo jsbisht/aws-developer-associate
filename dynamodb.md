@@ -335,3 +335,53 @@ This is great for reporting and analytics in the event of changes.
 ![img](./imgs/dynamo-db/DDB-Triggers.webp)
 
 ---
+
+## DynamoDB Accelerator (DAX)
+
+This is an in memory cache for DynamoDB. It should be considered to `reduce cost and increase performance`, when you have large RCU being used i.e. for read heavy workloads.
+
+    Not ideal if you need strongly consistent reads
+
+> Used if you need really low response time at scale
+
+Traditional Cache
+
+- The application needs to access some data and checks the cache. If there is no data, it is a cache miss and it pulls from the database. This then updates the cache with the new data. Next times there will be a cache hit and it will be faster.
+- But a seperate operation is needed to load data from database on cache miss.
+
+DAX
+
+- The application instance has DAX SDK added on.
+- If DAX has the data then the data is returned directly. If not, DAX will talk to DynamoDB and get the data. This is one set of API calls and is much easier for the developers.
+
+### DAX Architecture
+
+DAX operates from within a VPC and is designed to be deployed to multiple AZs in that VPC.
+
+There is a `primary node` which is a read and write node which replicates the data on other nodes which are `read replicas`.
+
+![img](./imgs/dynamo-db/DDB-Accelerator-DAX.webp)
+
+So, here the application communicates through DAX SDK. and DAX communicates with DynamoDB.
+
+With DAX you can scale up or scale out.
+
+#### Cache Types
+
+DAX maintains two different caches:
+
+1. Item Cache - This caches individual items retrieved via `GetItem` or `BatchGetItem` operation
+2. Query Cache - This caches the `results of Query and Scan operation` including the parameters used.
+
+#### DAX Endpoint
+
+Every DAX cluster, similar to RDS, has an endpoint which is load balanced across the cluster.
+
+- Cache hits are returned in about 400 microseconds
+- Cache miss can be returned in single digit milliseconds.
+
+#### DAX Write-Through
+
+When writing data to DAX, it can use write-through. Data is written to the database, then written to DAX.
+
+- If data is being retrived from DyanamoDB during cache miss, it will be written to primary node of the cluster
