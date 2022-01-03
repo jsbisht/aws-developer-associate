@@ -20,7 +20,7 @@
 - [Lambda](./lambda.md)
 - [API Gateway](./gateway.md)
 - [Databases (NoSQL)](./dynamodb.md)
-- [Elastic Beanstalk]
+- [Elastic Beanstalk](./beanstalk.md)
 
 ---
 
