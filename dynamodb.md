@@ -203,8 +203,7 @@ Query can only work on 1 partition key value at a time.
 
 Indexes are a way to provide an alternative view on table data.
 
-You have the ability to `choose which attributes are projected`
-to the table.
+You have the ability to `choose which attributes are projected` to the table.
 
 ### Local Secondary Indexes (LSI)
 
@@ -215,7 +214,7 @@ table in the beginning.
 
 Maximum of 5 LSI's per base table.
 
-LSI allows `using alternative sort key` on the table but the same partition key.
+LSI allows `using alternative sort key` on the table but `the same partition key`.
 
 `Shares the RCU and WCU with the table`, if the main table is using provisioned capacity.
 
@@ -232,3 +231,35 @@ As we know scan operation for getting the Sunny Days from the base table is time
 ![img](./imgs/dynamo-db/DDB-Local-Secondary-Indexes-LSI.webp)
 
 The indexes are sparse. Only items that has value for the attribute used as sort key are included for indexing.
+
+### Global Secondary Indexes (GSI)
+
+Can be created at any time and much more flexible.
+
+There is a default limit of 20 GSIs for each table.
+
+This allows for `alternative sort key` and `as well as partition key`.
+
+GSI will `have their own RCU and WCU allocations`, if the main table is using provisioned capacity.
+
+Attributes that can be projected into the GSI has the following options:
+
+- ALL
+- KEYS_ONLY
+- INCLUDE (lets you choose attributes)
+
+![img](./imgs/dynamo-db/DDB-Global-Secondary-Indexes-GSI.webp)
+
+The indexes are sparse. Only items that has value for the attribute used as sort key are included for indexing.
+
+Replication between base table and GSI is asynchronous
+
+    GSIs are always eventually consistent
+
+### Considerations
+
+If you don't project a specific attribute, but then you require the attribute later. This is really inefficient and should be planned better as
+
+    Queries on attributes NOT projected are expensive
+
+AWS recommends GSI as default and only use LSI when `strong consistency` is required.
