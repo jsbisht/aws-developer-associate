@@ -5,7 +5,7 @@ Elastic Beanstalk is a Platform as a Service environment which can create and ma
 - User provides code and EB handles the environment
 - EB does create resources behind the scene (you can check for EC2 instances created)
 - It also support customization to control how you want the infrastructure
-- Any custom defination about the infrastructure can be committed along with the source code
+- Any custom defination about the infrastructure can be committed along with the source code as part of `Application Source Bundle`.
 
 CloudFormation instead is Infrastructure as Code.
 
@@ -113,6 +113,7 @@ User can connect to our application using the CNAME or the DNS name.
 - Great for small development teams
 - Databases are generally OUTSIDE of elastic beanstalk
 - Databases within the environment are deleted, when environment is deleted
+- valid file formats for providing EB with application: `WAR and ZIP files`
 
 ---
 
@@ -162,6 +163,8 @@ User can connect to our application using the CNAME or the DNS name.
 ## Blue-Green Deployment
 
 You can also manually switch between environments without using any deployment policy.
+
+This is done using CNAME swap or Route 53.
 
 ![img](./imgs/beanstalk/EBDeployment_BlueGreen.webp)
 
