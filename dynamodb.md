@@ -263,3 +263,75 @@ If you don't project a specific attribute, but then you require the attribute la
     Queries on attributes NOT projected are expensive
 
 AWS recommends GSI as default and only use LSI when `strong consistency` is required.
+
+---
+
+## DynamoDB Streams
+
+DymanoDB stream is a time ordered list of changes to items in a DynamoDB table. A stream is a 24 hour rolling window of the changes.
+
+It uses Kinesis streams behind the scenes.
+
+This is enabled on a per table basis. This records
+
+- Inserts
+- Updates
+- Deletes
+
+Different view types influence what is in the stream.
+
+### Example
+
+Consider a table whose item is updated with one of its attribute removed.
+
+If we have enabled streams on this table, it will record any
+
+- Inserts
+- Updates
+- Deletes
+
+![img](./imgs/dynamo-db/DDB-Stream.webp)
+
+### View Types
+
+There are four view types that a stream can be configured with:
+
+#### KEYS_ONLY
+
+- it will only record the partition key and any sort key for the item that has changed.
+- so determine the change, it would require a database read.
+
+#### NEW_IMAGE
+
+- stores entire item, how it was after the change
+- can be used to consume the new updated data
+
+#### OLD_IMAGE
+
+- shows the initial item before the change
+
+#### NEW_AND_OLD_IMAGES
+
+- shows both before and after the change
+- Pre or post change state might be empty if you use **insert** or **delete**
+
+---
+
+## DynamoDB Triggers
+
+Allow for actions to take place in the event of a change in data.
+
+Item change generates an event which contains the data which was changed. The data contained `depends on the view type`.
+
+When an item is added to a stream, action is taken using that data. The `action is implemeted using stream and lambda`.
+
+- So Lambda can respond to any data change operation that had caused the `Stream Event`.
+
+This is great for reporting and analytics in the event of changes.
+
+- Good for data aggregation
+- provide messages or notifications and eliminates the need to poll databases.
+
+![img](./imgs/dynamo-db/DDB-Triggers.webp)
+
+---
