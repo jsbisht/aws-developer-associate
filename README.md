@@ -40,3 +40,5 @@ References:
 - User pools
 
 https://docs.aws.amazon.com/cognito/latest/developerguide/images/scenario-cup-cib2.png
+
+https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/displaying-a-sponsor-button-in-your-repository
