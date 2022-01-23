@@ -155,7 +155,7 @@ AWS
 - Lets an API expose AWS service actions
 - i.e. transformation before passing through mapping templates
 
-HTTP Proxy
+HTTP_PROXY
 
 - No configuration of integration request and response
 - pass data as it is from request to integration and response back to client

@@ -161,7 +161,7 @@ Cloudfromation deployment
 
 ## Security
 
-For certificates in a Region supported by AWS Certificate Manager (ACM), it is recommended that you use ACM to provision, manage, and deploy your server certificates. In unsupported Regions, you must use IAM as a certificate manager.
+For certificates in a Region supported by AWS Certificate Manager (ACM), it is recommended that you use ACM to provision, manage, and deploy your server certificates. In unsupported Regions, you must use **IAM as a certificate manager**.
 
 If you have resources that are running inside AWS, that need programmatic access to various AWS services,then the best practice is to always use IAM roles. However, for applications running outside of an AWS environment, these will need access keys for programmatic access to AWS resources.
 
@@ -195,6 +195,10 @@ To avoid security issues, it is of utmost importance to test the impact of servi
 
 S3 when using SSE-C requires **x-amz-server-side​-encryption​-customer-algorithm**, **x-amz-server-side-encryption-customer-key** and **x-amz-server-side-encryption-customer-key-MD5** headers on the upload request headers to be passed during upload request.
 
+The bucket will use server-side encryption with Amazon S3-Managed encryption keys (SSE-S3) to encrypt the data using 256-bit Advanced Encryption Standard (AES-256) block cipher. **x-amz-server-side-encryption** must be used during the upload.
+
+SSE-KMS requires **x-amz-server-side-encryption** must be used during the upload. When you upload an object, you can specify the KMS key using the _x-amz-server-side-encryption-aws-kms-key-id_ header. If the header is not present in the request, Amazon S3 assumes the default KMS key.
+
 Encrypt operation is primarily used to encrypt RSA keys, database passwords, or other sensitive information. This operation can also be used to move encrypted data from one AWS region to another however, this is `not recommended if you want to encrypt your data locally`. You have to use the GenerateDataKey operation instead.
 
 Envelope encryption - Encrypt plaintext data with a data key and then encrypt the data key with a top-level plaintext master key.
@@ -203,5 +207,102 @@ When a client makes a request to one of your API’s methods, API Gateway calls 
 
 There are two types of Lambda authorizers:
 
-– A token-based Lambda authorizer (also called a TOKEN authorizer) receives the caller’s identity in a bearer token, such as a JSON Web Token (JWT) or an OAuth token.
-– A request parameter-based Lambda authorizer (also called a REQUEST authorizer) receives the caller’s identity in a combination of headers, query string parameters, stageVariables, and $context variables.
+– A **token-based Lambda authorizer** (also called a TOKEN authorizer) receives the caller’s identity in a bearer token, such as a JSON Web Token (JWT) or an OAuth token.
+– A **request parameter-based Lambda authorizer** (also called a REQUEST authorizer) receives the caller’s identity in a combination of headers, query string parameters, stageVariables, and $context variables.
+
+Container Instance IAM Role only applies if you are using the EC2 launch type. Not with a Fargate launch type.
+Service-linked role is a unique type of IAM role that is linked directly to Amazon ECS itself and not on the ECS task.
+
+IAM DB Authentication simply encrypts the network traffic to and from the RDS database using Secure Sockets Layer (SSL). i.e. primarily used to secure data-in-transit rather than data at rest.
+
+## Development
+
+The purpose of resharding in Amazon Kinesis Data Streams is to enable your stream to adapt to changes in the rate of data flow.
+
+- You split shards to increase the capacity (and cost) of your stream.
+- You merge shards to reduce the cost (and capacity) of your stream.
+
+You split every shard in the stream—which would double the stream’s capacity. However, this might provide more additional capacity than you actually need and therefore create unnecessary cost.
+
+You could then selectively split the hot shards to increase capacity for the hash keys that target those shards. Similarly, you could merge cold shards to make better use of their unused capacity.
+
+By default, an AWS account’s concurrent execution limit is 1000 which will be shared by all Lambda functions. In this scenario, it is highly likely that the first function has more provisioned concurrency than the other one. It is possible that the concurrency execution limit of the first function is set to a significantly high value (e.g. 900) and the second function is set to use the unreserved account concurrency which may only contain the last 100 units out of the AWS account’s concurrent execution limit of 1000.
+
+Hence, the correct solutions in this scenario are:
+
+– Set the concurrency execution limit of both functions to 450
+
+– Decrease the concurrency execution limit of the first function.
+
+All of the APIs created with Amazon API Gateway expose HTTPS endpoints only.
+
+Amazon API Gateway does not support unencrypted (HTTP) endpoints. By default, Amazon API Gateway assigns an internal domain to the API that automatically uses the Amazon API Gateway certificate. When configuring your APIs to run under a custom domain name, you can provide your own certificate for the domain.
+
+The base URL for REST APIs is in the following format:
+
+> https://{restapi_id}.execute-api.{region}.amazonaws.com/{stage_name}/
+
+DynamoDB partitions are usually throttled when they are accessed by your downstream applications much more frequently than other partitions (that is, a “hot” partition), or when workloads rely on short periods of time with high usage (a “burst” of read or write activity). **To avoid hot partitions and throttling**, you must optimize your table and partition structure.
+
+DynamoDB adaptive capacity automatically boosts throughput capacity to high-traffic partitions. However, each partition is still subject to the hard limit. This means that adaptive capacity can’t solve larger issues with your table or partition design. To avoid hot partitions and throttling, optimize your table and partition structure.
+
+The project dashboard in AWS CodeStar makes it easy to centrally monitor application activity and manage day-to-day development tasks such as recent code commits, builds, and deployments.
+
+- Implement error retries and exponential backoff. This technique uses progressively longer waits between retries for consecutive error responses to help improve an application’s reliability. If you’re using an AWS SDK, this logic is built‑in. If you’re using another SDK, consider implementing it manually.
+
+- You can add a random number to the partition key values to distribute the items among partitions (Sharding Using Random Suffixes), or you can use a number that is calculated based on something that you are querying on (Sharding Using Calculated Suffixes).
+
+Amazon CodeGuru is simply a developer tool that provides intelligent recommendations to improve the quality of your codebase and for identifying an application’s most “expensive” lines of code in terms of resource intensiveness, CPU performance, and code efficiency.
+
+In the cloud, resources are elastic, meaning they can instantly grow or shrink to match the requirements of a specific application.
+
+There are two basic types of elasticity:
+
+1. Time-based
+2. Volume-based
+
+Time-based elasticity means turning off resources when they are not being used, such as a development environment that is needed only during business hours. Volume-based elasticity means matching scale to the intensity of demand, whether that’s compute cores, storage sizes, or throughput.
+
+You can also use a combination of ELB and Auto Scaling to maximize the elasticity of your architecture. Beyond Auto Scaling for Amazon EC2, you can use Application Auto Scaling to automatically scale resources for other AWS services, including:
+
+- Amazon ECS
+- Amazon EC2 Spot Fleets
+- Amazon DynamoDB
+
+You can use Lambda functions to change CloudFront requests and responses at the following points:
+
+– After CloudFront receives a request from a viewer (viewer request)
+– Before CloudFront forwards the request to the origin (origin request)
+– After CloudFront receives the response from the origin (origin response)
+– Before CloudFront forwards the response to the viewer (viewer response)
+
+You can use Lambda@Edge to allow your Lambda functions to customize the content that CloudFront delivers and **to execute the authentication process in AWS locations closer to the users**. In addition, you can set up an origin failover by creating an origin group with two origins with one as the primary origin and the other as the second origin, which CloudFront automatically switches to when the primary origin fails.
+
+You can use the API Gateway Import API feature to import a REST API from an external definition file (on-premise) into API Gateway. Currently, the Import API feature supports OpenAPI v2.0 and OpenAPI v3.0 definition files.
+
+Placement strategy sample:
+
+```json
+"placementStrategy": [
+  {
+    "field": "attribute:ecs.availability-zone",
+    "type": "spread"
+  }
+]
+```
+
+When using the spread strategy, you must also indicate a field parameter. It is used to indicate the bins that you are considering. The accepted values are instanceID, host, or a custom attribute key:value pairs such as attribute:ecs.availability-zone to balance tasks across zones.
+
+If you choose Canary10Percent10Minutes then 10 percent of your customer traffic is immediately shifted to your new version. After 10 minutes, all traffic is shifted to the new version. However, if your pre-hook/post-hook tests fail, or if a CloudWatch alarm is triggered, CodeDeploy rolls back your deployment.
+
+The following table outlines other traffic-shifting options that are available:
+
+- **Canary**
+- **Linear**
+- **All-at-once**
+
+Hence, the CodeDeployDefault.LambdaCanary10Percent5Minutes option is correct because 10 percent of your customer traffic is immediately shifted to your new version. After 5 minutes, all traffic is shifted to the new version. This means that the entire deployment time will only take 5 minutes
+
+In ECS, port mappings are specified as part of the container definition which can be configured in the task definition.
+
+![img](https://docs.aws.amazon.com/apigateway/latest/developerguide/images/apigateway-my-resource-get-method-execution-boxes.png)
