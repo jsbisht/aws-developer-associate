@@ -126,6 +126,10 @@ Resources:
 
 After attaching the newly created EBS volume to the Linux EC2 instance, Create a file system on this volume.
 
+The AWS Serverless Application Model (AWS SAM) is an open source framework for building serverless applications. It provides shorthand syntax to express functions, APIs, databases, and event source mappings. You define the application you want with just a few lines per resource and model it using YAML.
+
+AWS SAM is natively supported by AWS CloudFormation and provides a simplified way of defining the Amazon API Gateway APIs, AWS Lambda functions, and Amazon DynamoDB tables needed by your serverless application. During deployment, SAM transforms and expands the SAM syntax into AWS CloudFormation syntax. Then, CloudFormation provisions your resources with reliable deployment capabilities.
+
 AWS SAM is an extension of AWS CloudFormation, you get the reliable deployment capabilities of AWS CloudFormation. This architecture allows the developers to locally build, test, and debug serverless applications.
 
 - The CLI provides a Lambda-like execution environment locally. It helps you catch issues upfront by providing parity with the actual Lambda execution environment. To step through and debug your code to understand what the code is doing, you can use AWS SAM with AWS toolkits like the AWS Toolkit for JetBrains, AWS Toolkit for PyCharm, AWS Toolkit for IntelliJ, and AWS Toolkit for Visual Studio Code.
@@ -242,6 +246,8 @@ The base URL for REST APIs is in the following format:
 
 > https://{restapi_id}.execute-api.{region}.amazonaws.com/{stage_name}/
 
+"Effect": "Allow", "Action": ["execute-api:InvalidateCache"] allows any request to invalidate cache results in API Gateway.
+
 DynamoDB partitions are usually throttled when they are accessed by your downstream applications much more frequently than other partitions (that is, a “hot” partition), or when workloads rely on short periods of time with high usage (a “burst” of read or write activity). **To avoid hot partitions and throttling**, you must optimize your table and partition structure.
 
 DynamoDB adaptive capacity automatically boosts throughput capacity to high-traffic partitions. However, each partition is still subject to the hard limit. This means that adaptive capacity can’t solve larger issues with your table or partition design. To avoid hot partitions and throttling, optimize your table and partition structure.
@@ -306,3 +312,47 @@ Hence, the CodeDeployDefault.LambdaCanary10Percent5Minutes option is correct bec
 In ECS, port mappings are specified as part of the container definition which can be configured in the task definition.
 
 ![img](https://docs.aws.amazon.com/apigateway/latest/developerguide/images/apigateway-my-resource-get-method-execution-boxes.png)
+
+about local secondary indexes:
+
+– When you query this index, you can choose either eventual consistency or strong consistency.
+– Queries or scans on this index consume read capacity units from the base table
+– For each partition key value, the total size of all indexed items must be 10 GB or less.
+
+about global secondary indexes:
+
+- Queries on this index support eventual consistency only.
+
+suppose that each item is 4 KB and you set the page size to 40 items. A Query request would then consume only 20 eventually consistent read operations or 40 strongly consistent read operations.
+Reduce page size – A larger number of smaller Query or Scan operations would allow your other critical requests to succeed without throttling.
+
+Segments and subsegments can include an annotations object containing one or more fields that X-Ray indexes for use with filter expressions.
+
+Segments and subsegments can include a metadata object containing one or more fields with values of any type, including objects and arrays.
+
+metadata and annotations does not record the application’s calls to your AWS services and resources.
+
+A segment can break down the data about the work done into subsegments. Subsegments provide more granular timing information and details about downstream calls that your application made to fulfill the original request. A subsegment can contain additional details about a call to an AWS service, an external HTTP API, or an SQL database.
+
+![img](https://docs.aws.amazon.com/xray/latest/devguide/images/scorekeep-PUTrules-timeline-subsegments.png)
+
+For services that don’t send their own segments like Amazon DynamoDB, X-Ray uses subsegments to generate inferred segments and downstream nodes on the service map. This lets you see all of your downstream dependencies, even if they don’t support tracing, or are external.
+
+For Lambda functions that process Kinesis or DynamoDB streams, the number of shards is the unit of concurrency. If your stream has 100 active shards, there will be at most 100 Lambda function invocations running concurrently. This is because Lambda processes each shard’s events in sequence.
+
+The Amazon ECS container agent is included in the Amazon ECS-optimized AMIs, but you can also install it on any Amazon EC2 instance that supports the Amazon ECS specification.
+
+You may use ElastiCache as your database cache, it will not reduce the DynamoDB response time to microseconds unlike DynamoDB DAX.
+
+Your sign-in page URL has the following format, by default:
+
+- https://<Your_AWS_Account_ID>.signin.aws.amazon.com/console/
+- https://<Your_Alias>.signin.aws.amazon.com/console/
+
+When switching form RDS database to RDS Read Replicas or ElastiCache Cluster, note that ElastiCache Cluster requires more code change than switching to RDS Read Replicas.
+
+you invoke your Lambda function using the Invoke operation, and you can specify the invocation type as synchronous or asynchronous. In the Invoke API, you have 3 options to choose from for the InvocationType:
+
+- `RequestResponse` (default) – Invoke the function synchronously. Keep the connection open until the function returns a response or times out. The API response includes the function response and additional data.
+- `Event` – Invoke the function asynchronously. Send events that fail multiple times to the function’s dead-letter queue (if it’s configured). The API response only includes a status code.
+- `DryRun`
