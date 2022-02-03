@@ -473,7 +473,7 @@ To add ElastiCache into the application, `code changes are required`.
 - Application needs to use the cache
 - Fetch the data from Database on cache miss
 
-## Redi vs MemcacheD
+## Redis vs MemcacheD
 
 |                      Memcached                       | Redis                                            |
 | :--------------------------------------------------: | ------------------------------------------------ |

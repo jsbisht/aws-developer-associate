@@ -103,6 +103,8 @@ lambda edge
 
 ## Deployment
 
+An EC2 instance needs to have access to the Internet, via the Internet Gateway or a NAT Instance/Gateway in order to access S3.
+
 trace all calls that your Node.js application hosted in elastic beanstalk sends to external HTTP web APIs as well as SQL database queries
 Enable the X-Ray daemon by including the xray-daemon.config configuration file in the .ebextensions directory of your source code.
 
@@ -162,6 +164,31 @@ Cloudfromation deployment
 
 - aws cloudformation package
 - aws cloudformation deploy
+
+Elastic Beanstalk recommends one of two methods for performing platform updates.
+
+Method 1 – Update your Environment’s Platform Version – This is the recommended method when you’re updating to the latest platform version, **without a change in runtime, web server, or application server versions**, and **without a change in the major platform** version. This is the most common and routine platform update.
+
+Method 2 – Perform a Blue/Green Deployment – This is the recommended method when you’re updating to a different runtime, web server, or application server versions, or **to a different major platform version**.
+
+Performing a Canary deployment is incorrect because this type of deployment is primarily used in Lambda and not in Elastic Beanstalk.
+
+If an EBS volume is the root device of an instance, you must stop the instance before you can detach the volume.
+
+Errors for Lambda creation
+
+- CodeStorageExceededException - You have exceeded your maximum total code size per account.
+- InvalidParameterValueException - One of the parameters in the request is invalid.
+- ResourceConflictException - The resource already exists, or another operation is in progress.
+- ResourceNotFoundException - The resource specified in the request does not exist.
+- ServiceException - The AWS Lambda service encountered an internal error.
+- TooManyRequestsException - The request throughput limit was exceeded.
+
+After you’ve defined a stack set, you can create, update, or delete stacks in the target accounts and regions you specify. When you create, update, or delete stacks, you can also specify operational preferences, such as the order of regions in which you want the operation to be performed, the failure tolerance beyond which stack operations stop, and the number of accounts in which operations are performed on stacks concurrently.
+
+stack set is a regional resource so if you create a stack set in one region, you cannot see it or change it in other regions.
+
+After attaching the newly created EBS volume to the Linux EC2 instance, create a file system on this volume. After you attach an Amazon EBS volume to your instance, it is exposed as a block device. You can format the volume with any file system and then mount it.
 
 ## Security
 
@@ -229,6 +256,10 @@ The purpose of resharding in Amazon Kinesis Data Streams is to enable your strea
 You split every shard in the stream—which would double the stream’s capacity. However, this might provide more additional capacity than you actually need and therefore create unnecessary cost.
 
 You could then selectively split the hot shards to increase capacity for the hash keys that target those shards. Similarly, you could merge cold shards to make better use of their unused capacity.
+
+You should ensure that the number of instances does not exceed the number of open shards.
+
+- for 20 shards maximum 20 instances should be used
 
 By default, an AWS account’s concurrent execution limit is 1000 which will be shared by all Lambda functions. In this scenario, it is highly likely that the first function has more provisioned concurrency than the other one. It is possible that the concurrency execution limit of the first function is set to a significantly high value (e.g. 900) and the second function is set to use the unreserved account concurrency which may only contain the last 100 units out of the AWS account’s concurrent execution limit of 1000.
 
@@ -307,7 +338,11 @@ The following table outlines other traffic-shifting options that are available:
 - **Linear**
 - **All-at-once**
 
-Hence, the CodeDeployDefault.LambdaCanary10Percent5Minutes option is correct because 10 percent of your customer traffic is immediately shifted to your new version. After 5 minutes, all traffic is shifted to the new version. This means that the entire deployment time will only take 5 minutes
+Hence, the CodeDeployDefault.LambdaCanary10Percent5Minutes option is correct because 10 percent of your customer traffic is immediately shifted to your new version. After 5 minutes, all traffic is shifted to the new version. This means that the entire deployment time will only take 5 minutes.
+
+CodeDeployDefault.HalfAtATimeis incorrect because this is only applicable for EC2/On-premises compute platform and not for Lambda.
+
+CodeDeploy agent needs to be installed on EC2 instances while its not required while using CodeDeploy with ECS or Lambda.
 
 In ECS, port mappings are specified as part of the container definition which can be configured in the task definition.
 
@@ -356,3 +391,122 @@ you invoke your Lambda function using the Invoke operation, and you can specify 
 - `RequestResponse` (default) – Invoke the function synchronously. Keep the connection open until the function returns a response or times out. The API response includes the function response and additional data.
 - `Event` – Invoke the function asynchronously. Send events that fail multiple times to the function’s dead-letter queue (if it’s configured). The API response only includes a status code.
 - `DryRun`
+
+f you’re using the domain name that CloudFront assigned to your distribution, such as dtut0ria1sd0jo.cloudfront.net, you can change the **Viewer Protocol Policy setting** for one or more cache behaviors to **require HTTPS communication** by setting it as either Redirect HTTP to HTTPS, or HTTPS Only.
+
+**If your origin is an Elastic Load Balancing load balancer**, you can use a certificate provided by AWS Certificate Manager (ACM). You can also use a certificate that is signed by a trusted third-party certificate authority and imported into ACM. Note that you can’t use a self-signed certificate for HTTPS communication between CloudFront and your origin.
+
+Configuring the ALB to use its default SSL/TLS certificate is incorrect because **there is no default SSL certificate in ELB**, unlike what we have in CloudFront.
+
+Note that the number of duplicates due to producer retries is usually low compared to the number of duplicates due to consumer retries.
+
+- https://docs.aws.amazon.com/streams/latest/dev/kinesis-record-processor-duplicates.html
+- https://docs.aws.amazon.com/streams/latest/dev/kinesis-record-processor-scaling.html
+
+Using Signed URLs and Signed Cookies in CloudFront to distribute the firmware update file is incorrect because although this solution provides a way to authenticate the premium users for the private content, the process of authentication has a significant latency in comparison to the Lambda@Edge solution. In this option, you have to refactor your application (which is deployed to a specific AWS region) to either create and distribute signed URLs to authenticated users or to send Set-Cookie headers that set signed cookies on the viewers for authenticated users. This will cause the latency, which could have been improved if the authentication logic resides on CloudFront edge locations using Lambda@Edge.
+
+Memcached over Redis if you need to run large nodes with multiple cores or threads.
+
+RDS - Enable slow query log in RDS, to collect all SQL statements that took longer.
+
+Caching strategies
+
+- Lazy loading - Your data store then returns the data to your application. Your application next writes the data received from the store to the cache.
+- Write-through
+- Russian doll - this strategy configures your cache to have nested records
+- Adding TTL
+
+## Monitoring
+
+AWS_XRAY_DEBUG_MODE is used to configure the SDK to output logs to the console without using a logging library.
+
+AWS_XRAY_TRACING_NAME is primarily used in X-Ray SDK where you can **set a service name** that the SDK uses for segments.
+
+AUTO_INSTRUMENT is primarily used in X-Ray SDK for Django Framework only. This allows the recording of subsegments for built-in database and template rendering operations.
+
+AWS_XRAY_CONTEXT_MISSING: The X-Ray SDK uses this variable to determine its behavior in the event that your function tries to record X-Ray data, but a tracing header is not available. Lambda sets this value to LOG_ERROR by default.
+
+AWS_XRAY_DAEMON_ADDRESS: This environment variable exposes the X-Ray daemon’s address in the following format: IP_ADDRESS:PORT.
+
+\_X_AMZN_TRACE_ID: Contains the tracing header, which includes trace ID, and parent segment ID. If Lambda receives a tracing header when your function is invoked, that header will be used to populate the \_X_AMZN_TRACE_ID environment variable. If a tracing header was not received, Lambda will generate one for you.
+
+A segment document can be up to 64 kB and contain a whole segment with subsegments, a fragment of a segment that indicates that a request is in progress, or a single subsegment that is sent separately.
+
+You can send segment documents directly to X-Ray by using the PutTraceSegments API.
+
+X-Ray compiles and processes segment documents to generate queryable trace summaries and full traces that you can access by using the GetTraceSummaries and BatchGetTraces APIs, respectively.
+
+Below are the optional subsegment fields:
+
+- namespace – aws for AWS SDK calls; remote for other downstream calls.
+- http – http object with information about an outgoing HTTP call.
+- aws – aws object with information about the downstream AWS resource that your application called.
+- error, throttle, fault, and cause – error fields that indicate an error occurred and that include information about the exception that caused the error.
+- annotations – annotations object with key-value pairs that you want X-Ray to index for search.
+- metadata – metadata object with any additional data that you want to store in the segment.
+- subsegments – array of subsegment objects.
+
+Refactoring your application to send segment documents directly to X-Ray by using the **PutTraceSegments API** is incorrect because although this solution will work, it entails a lot of manual effort to perform. You don’t need to do this because you can just install the X-Ray daemon on the instance to automate this process.
+
+The data provided by CloudWatch is not as detailed as compared with the Enhanced Monitoring feature in RDS. Take note as well that you do not have direct access to the instances/servers of your RDS database instance, unlike with your EC2 instances where you can install a CloudWatch agent or a custom script to get CPU and memory utilization of your instance.
+
+NAT Gateway and Security group is required by Lambda to connect to internet.
+ENI's will be used by Lambda to connect to resources within the AWS network. (This would also require making Lambda private)
+
+The following are the Gateway response types which are associated with the HTTP 504 error in API Gateway:
+
+- INTEGRATION_FAILURE – The gateway response for an integration failed error. If the response type is unspecified, this response defaults to the DEFAULT_5XX type.
+- INTEGRATION_TIMEOUT – The gateway response for an integration timed out error. If the response type is unspecified, this response defaults to the DEFAULT_5XX type.
+
+**For the integration timeout**, the range is from 50 milliseconds to 29 seconds for all integration types, including Lambda, Lambda proxy, HTTP, HTTP proxy, and AWS integrations.
+
+In this scenario, there is an issue where the users are getting HTTP 504 errors in the serverless application. This means the Lambda function is working fine at times but there are instances when it throws an error. Based on this analysis, the most likely cause of the issue is the INTEGRATION_TIMEOUT error since you will only get an INTEGRATION_FAILURE error if your AWS Lambda integration does not work at all in the first place.
+
+Since the incoming requests are increasing, the API Gateway automatically enabled throttling which caused the HTTP 504 errors. is incorrect because a large number of incoming requests will most likely **produce an HTTP 502 or 429 error but not a 504 error**. If executing the function would cause you to exceed a concurrency limit at either the account level (ConcurrentInvocationLimitExceeded) or function level (ReservedFunctionConcurrentInvocationLimitExceeded), Lambda may return a TooManyRequestsException as a response.
+
+For functions with a long timeout, your client might be disconnected during synchronous invocation while it waits for a response and returns an HTTP 504 error.
+
+An authorization failure occurred between API Gateway and the Lambda function. is incorrect because an authentication issue usually produces HTTP 403 errors and not 504s.
+
+Concurrent execution limit error.
+
+Amazon API Gateway Lambda proxy integration is a simple, powerful, and nimble mechanism to build an API with a setup of a single API method. The Lambda proxy integration allows the client to call a single Lambda function in the backend. In Lambda proxy integration, when a client submits an API request, API Gateway passes to the integrated Lambda function the raw request as-is. Because API Gateway doesn't intervene very much between the client and the backend Lambda function for the Lambda proxy integration, the client and the integrated Lambda function can adapt to changes in each other without breaking the existing integration setup of the API.
+
+You can scale the size of your group **manually** by adjusting your desired capacity, or you can automate the process through the use of scheduled scaling or a scaling policy. The desired capacity must be less than or equal to the maximum size of the group. If your new value for Desired capacity is greater than Maximum capacity, you must update Maximum capacity.
+
+Unlike CloudTrail, X-Ray doesnt record calls made to the AWS resources.
+
+VPC Flow Logs is incorrect because this is just a feature that enables you to capture information about the IP traffic going to and from network interfaces in your VPC.
+
+A namespace is a container for CloudWatch metrics. Metrics in different namespaces are isolated from each other, so that metrics from different applications are not mistakenly aggregated into the same statistics.
+
+By default, your instance is enabled for basic monitoring. You can optionally enable detailed monitoring.
+
+- Basic – Data is available automatically in 5-minute periods at no charge.
+- Detailed – Data is available in 1-minute periods for an additional cost.
+
+Including the **xray-daemon.config** configuration file in the AMI is incorrect because this configuration file is only applicable in Elastic Beanstalk. You have to install the X-Ray daemon via a user data script.
+
+Develop a custom debug tool which will enable them to view the full traces of their application without using the X-Ray console.
+Use the GetTraceSummaries API to get the list of trace IDs of the application and then retrieve the list of traces using BatchGetTraces API.
+
+Running the GetTraceSummaries operation retrieves IDs and annotations for traces available for a specified time frame using an optional filter.
+
+![img](https://docs.aws.amazon.com/xray/latest/devguide/images/scorekeep-filter-httpurlCONTAINSuser-cropped.png)
+
+For API Gateway to pass the Lambda output as the API response to the client, the Lambda function must return the result in the following JSON format:
+
+```json
+{
+    "isBase64Encoded": true|false,
+    "statusCode": httpStatusCode,
+    "headers": { "headerName": "headerValue", ... },
+    "body": "..."
+}
+```
+
+Since the Lambda function returns the result in XML format, it will cause the 502 errors in the API Gateway.
+
+Install CloudWatch Logs agent to collect both system metrics and log files from Amazon EC2 instances and on-premises servers.
+
+Although you can indeed use CloudTrail to track the API call, it can’t capture information about the IP traffic of your VPC. So, create a flow log in your VPC to capture information about the IP traffic going to and from network interfaces in your VPC.
