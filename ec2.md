@@ -86,14 +86,12 @@ When you launch an instance, the Security Groups are on the network interface an
 - 0 or more IPv6 address on the interface (all public IP addresses by default)
 - Security groups
   - This applies to the network interfaces and will impact all IP addresses on that interface
-  - if you need different IP addresses impacted by different security
-    groups, then you need to make multiple interfaces and apply different
-    security groups to those interfaces
+  - if you need different IP addresses impacted by different security groups, then you need to make multiple interfaces and apply different security groups to those interfaces
 - Source / destination checks
   - If traffic is on the interface, it will be discarded if it is not from `one of the IP addresses on the interface as source` or going to `one of the IP addresses on the interface as destination`
   - This setting needs to be disabled for an EC2 instance to work as a NAT instance.
 
-## Secondary interfaces function in all the same ways as primary interfaces except you can detach interfaces and move them to other EC2 instances.
+Secondary interfaces function in all the same ways as primary interfaces except you can detach interfaces and move them to other EC2 instances.
 
 ## Primary IPv4 private address
 

@@ -105,7 +105,7 @@ lambda edge
 
 An EC2 instance needs to have access to the Internet, via the Internet Gateway or a NAT Instance/Gateway in order to access S3.
 
-trace all calls that your Node.js application hosted in elastic beanstalk sends to external HTTP web APIs as well as SQL database queries
+trace all calls that your Node.js application hosted in elastic beanstalk sends to external HTTP web APIs as well as SQL database queries.
 Enable the X-Ray daemon by including the xray-daemon.config configuration file in the .ebextensions directory of your source code.
 
 In-place deployment: The application on each instance in the deployment group is stopped, the latest application revision is installed, and the new version of the application is started and validated. You can use a load balancer so that each instance is deregistered during its deployment and then restored to service after the deployment is complete.
@@ -173,6 +173,8 @@ Method 2 – Perform a Blue/Green Deployment – This is the recommended method 
 
 Performing a Canary deployment is incorrect because this type of deployment is primarily used in Lambda and not in Elastic Beanstalk.
 
+Package your application as a **zip** file and deploy it using the **eb deploy** command.
+
 If an EBS volume is the root device of an instance, you must stop the instance before you can detach the volume.
 
 Errors for Lambda creation
@@ -191,6 +193,8 @@ stack set is a regional resource so if you create a stack set in one region, you
 After attaching the newly created EBS volume to the Linux EC2 instance, create a file system on this volume. After you attach an Amazon EBS volume to your instance, it is exposed as a block device. You can format the volume with any file system and then mount it.
 
 ## Security
+
+Use IAM as a certificate manager only when you must support HTTPS connections in a Region that is not supported by ACM.
 
 For certificates in a Region supported by AWS Certificate Manager (ACM), it is recommended that you use ACM to provision, manage, and deploy your server certificates. In unsupported Regions, you must use **IAM as a certificate manager**.
 
@@ -246,7 +250,20 @@ Service-linked role is a unique type of IAM role that is linked directly to Amaz
 
 IAM DB Authentication simply encrypts the network traffic to and from the RDS database using Secure Sockets Layer (SSL). i.e. primarily used to secure data-in-transit rather than data at rest.
 
+API Gateway Lambda Authorizer
+
+service-linked role is a unique type of IAM role that is linked directly to Amazon ECS itself and not on the ECS task.
+
+To avoid potential throttling, the provisioned write capacity for a global secondary index should be equal or greater than the write capacity of the base table since new updates will write to both the base table and global secondary index.
+
 ## Development
+
+Typically, when you use the KCL, you should ensure that the number of instances does not exceed the number of shards (except for failure standby purposes). Each shard is processed by exactly one KCL worker and has exactly one corresponding record processor, so you never need multiple instances to process one shard. However, one worker can process any number of shards, so it’s fine if the number of shards exceeds the number of instances.
+
+For a Lambda function, you can have two types of integration:
+
+– Lambda proxy integration
+– Lambda custom integration
 
 The purpose of resharding in Amazon Kinesis Data Streams is to enable your stream to adapt to changes in the rate of data flow.
 
@@ -416,7 +433,15 @@ Caching strategies
 - Russian doll - this strategy configures your cache to have nested records
 - Adding TTL
 
+Amazon SQS FIFO queues follow exactly-once processing. It introduces a parameter called Message Deduplication ID, which is the token used for deduplication of sent messages. Add a MessageDeduplicationId parameter to the SendMessage API request. Ensure that the messages are sent at least 5 minutes apart.
+
+It is better to use Kinesis instead of Lambda for the real-time data analytics application.
+
+Integrate CloudWatch Events with Lambda, which will automatically trigger the function every 30 minutes. (There is no scheduling feature in AWS Console for scheduling)
+
 ## Monitoring
+
+You can use the CloudWatch agent to collect both system metrics and log files from Amazon EC2 instances and on-premises servers. Aside from the usual metrics, it also tracks the memory, swap, and disk space utilization metrics of your server.
 
 AWS_XRAY_DEBUG_MODE is used to configure the SDK to output logs to the console without using a logging library.
 

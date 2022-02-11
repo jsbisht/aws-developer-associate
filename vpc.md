@@ -311,7 +311,7 @@ We will configure web tier to be public subnets, to make all the subnets be conn
 
 https://learn.cantrill.io/courses/1101194/lectures/36039667
 
-Stateless firewalls response will be sent on any emphemeral port, as its stateless. So in the firewall config we need to open all the ephemeral ports.
+Stateless firewalls response will be sent on any ephemeral port, as its stateless. So in the firewall config we need to open all the ephemeral ports.
 
 Stateful firewalls for this reason, makes setting firewall easy as the response port will be same as the request port. So, full emphemral port range is not kept open.
 
