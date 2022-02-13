@@ -420,7 +420,7 @@ Note that the number of duplicates due to producer retries is usually low compar
 - https://docs.aws.amazon.com/streams/latest/dev/kinesis-record-processor-duplicates.html
 - https://docs.aws.amazon.com/streams/latest/dev/kinesis-record-processor-scaling.html
 
-Using Signed URLs and Signed Cookies in CloudFront to distribute the firmware update file is incorrect because although this solution provides a way to authenticate the premium users for the private content, the process of authentication has a significant latency in comparison to the Lambda@Edge solution. In this option, you have to refactor your application (which is deployed to a specific AWS region) to either create and distribute signed URLs to authenticated users or to send Set-Cookie headers that set signed cookies on the viewers for authenticated users. This will cause the latency, which could have been improved if the authentication logic resides on CloudFront edge locations using Lambda@Edge.
+Using Signed URLs and Signed Cookies in CloudFront to distribute th firmware update file is incorrect because although this solution provides a way to authenticate the premium users for the private content, the process of authentication has a significant latency in comparison to the Lambda@Edge solution. In this option, you have to refactor your application (which is deployed to a specific AWS region) to either create and distribute signed URLs to authenticated users or to send Set-Cookie headers that set signed cookies on the viewers for authenticated users. This will cause the latency, which could have been improved if the authentication logic resides on CloudFront edge locations using Lambda@Edge.
 
 Memcached over Redis if you need to run large nodes with multiple cores or threads.
 
