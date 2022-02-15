@@ -19,10 +19,11 @@ The consolidated billing feature in **AWS Organizations** allows you to consolid
 
 To avoid security issues, it is of utmost importance to test the impact of service control policies (SCPs) on your IAM policies and resource policies before applying them. The **IAM policy simulator** evaluates the policies that you choose and determines the effective permissions for each of the actions that you specify.
 
-Your sign-in page URL has the following format, by default:
+Your sign-in page URL has the following format, by default: https://Your_AWS_Account_ID.signin.aws.amazon.com/console/
 
-- https://<Your_AWS_Account_ID>.signin.aws.amazon.com/console/
-- https://<Your_Alias>.signin.aws.amazon.com/console/
+If you create an AWS account alias for your AWS account ID, your sign-in page URL looks like the following example: https://Your_Alias.signin.aws.amazon.com/console/
+
+> iam create-account-alias --account-alias finance-dept
 
 Memcached over Redis if you need to run large nodes with multiple cores or threads.
 
@@ -113,6 +114,8 @@ There are two types of Lambda authorizers:
 – A **token-based Lambda authorizer** (also called a TOKEN authorizer) receives the caller’s identity in a bearer token, such as a JSON Web Token (JWT) or an OAuth token.
 – A **request parameter-based Lambda authorizer** (also called a REQUEST authorizer) receives the caller’s identity in a combination of headers, query string parameters, stageVariables, and $context variables.
 
+Take note that if the scenario uses an application hosted in Lambda, you have to use Lambda integration instead of HTTP proxy or HTTP custom.
+
 For a Lambda function, you can have two types of integration:
 
 – Lambda proxy integration
@@ -166,6 +169,12 @@ Since the Lambda function returns the result in XML format, it will cause the 50
 
 **put-bucket-policy** command can only be used to apply policy at the bucket level, not on objects. You can use S3 Access Control Lists (ACLs) instead to manage permissions of S3 objects.
 
+Glacier Retrival
+
+- Expedited: 1-5 minutes
+- Standard: 3-5 hours
+- Bulk: 5-12 hours
+
 # EBS
 
 After attaching the newly created EBS volume to the Linux EC2 instance, Create a file system on this volume.
@@ -180,7 +189,15 @@ To avoid potential throttling, the provisioned write capacity for a global secon
 
 DynamoDB adaptive capacity automatically boosts throughput capacity to high-traffic partitions. However, each partition is still subject to the hard limit. This means that adaptive capacity can’t solve larger issues with your table or partition design. To avoid hot partitions and throttling, optimize your table and partition structure.
 
-- You can add a random number to the partition key values to distribute the items among partitions (Sharding Using Random Suffixes), or you can use a number that is calculated based on something that you are querying on (Sharding Using Calculated Suffixes).
+To solve this issue, consider one or more of the following solutions:
+
+– Increase the amount of read or write capacity for your table to anticipate short-term spikes or bursts in read or write operations. If you decide later you don’t need the additional capacity, decrease it. Take note that Before deciding on how much to increase read or write capacity, consider the best practices in designing your partition keys.
+
+– Implement error retries and exponential backoff. This technique uses progressively longer waits between retries for consecutive error responses to help improve an application’s reliability. If you’re using an AWS SDK, this logic is built‑in. If you’re using another SDK, consider implementing it manually.
+
+– Distribute your read operations and write operations as evenly as possible across your table. A “hot” partition can degrade the overall performance of your table.
+
+– Implement a caching solution, such as DynamoDB Accelerator (DAX) or Amazon ElastiCache. DAX is a DynamoDB-compatible caching service that offers fast in‑memory performance for your application. If your workload is mostly read access to static data, query results can often be served more quickly from a well‑designed cache than from a database.
 
 About local secondary indexes:
 
@@ -197,6 +214,41 @@ Suppose that each item is 4 KB and you set the page size to 40 items. A Query re
 - A larger number of smaller Query or Scan operations would allow your other critical requests to succeed without throttling, instead of using large page size.
 
 You may use ElastiCache as your database cache, it will not reduce the DynamoDB response time to microseconds unlike DynamoDB DAX.
+
+Increasing the amount of read or write capacity for your table is incorrect because although it will also solve the throttling issues of your application, adding both RCU and WCU to your table will significantly increase your operating costs.
+
+Implementing **read sharding** to distribute workloads evenly is incorrect because you should implement a **write sharding** in your application instead. One way to better distribute writes across a partition key space in DynamoDB is to expand the space.
+
+- Sharding Using Random Suffixes: You can add a random number to the partition key values to distribute the items among partitions.
+- Sharding Using Calculated Suffixes: You can use a number that is calculated based on something that you are querying on.
+
+Locking
+
+- pessimistic concurrency: this will just prevent a value from being updated by locking the item or row in the database. This can block users from reading, updating, or deleting an entry depending on the lock type which is **not suitable for the multithreaded application**.
+- optimistic locking: Optimistic locking is a strategy to ensure that the client-side item that you are updating (or deleting) is the same as the item in DynamoDB. If you use this strategy, then your database writes are protected from being overwritten by the writes of others — and vice-versa.
+- conditional writes: By default, the DynamoDB write operations (PutItem, UpdateItem, DeleteItem) are **unconditional**: each of these operations will overwrite an existing item that has the specified primary key. DynamoDB optionally supports **conditional writes** for these operations. A conditional write will succeed only if the item attributes meet one or more expected conditions. Otherwise, it returns an error.
+- atomic counters: You might use an atomic counter to track the number of visitors to a website. In this case, your application would increment a numeric value, regardless of its current value. If an UpdateItem operation fails, the application could simply retry the operation. This would risk updating the counter twice, but you could probably tolerate a slight overcounting or undercounting of website visitors. An atomic counter would **not be appropriate where overcounting or undercounting can't be tolerated**. In such case use conditional write instead.
+
+DynamoDB has two read/write capacity modes for processing reads and writes on your tables:
+
+- On-demand: without capacity planning. pay-per-request pricing for read and write requests so that you pay only for what you use.
+- Provisioned (default, free-tier eligible)
+
+A write capacity unit (WCU) represents one write per second, for an item up to **1KB** in size.
+
+A read capacity unit (RCU) represents one read per second, for an item up to **4KB** in size.
+
+To create, update, or delete an item in a DynamoDB table, use one of the following operations:
+
+- PutItem
+- UpdateItem
+- DeleteItem
+
+To return the number of write capacity units consumed by any of these operations, set the ReturnConsumedCapacity parameter to one of the following:
+
+- TOTAL — returns the total number of write capacity units consumed.
+- INDEXES — returns the total number of write capacity units consumed, with subtotals for the table and any secondary indexes that were affected by the operation.
+- NONE — no write capacity details are returned. (This is the default.)
 
 # RDS
 
@@ -288,6 +340,8 @@ By default, your instance is enabled for basic monitoring. You can optionally en
 - Basic – Data is available automatically in 5-minute periods at no charge.
 - Detailed – Data is available in 1-minute periods for an additional cost.
 
+EC2 is incorrect because although you can run Docker in your EC2 instances, it does not provide a highly scalable, fast, container management service in comparison to ECS. Take note that in itself, EC2 is not scalable and should be paired with Auto Scaling and ELB.
+
 # ECS
 
 The Amazon ECS container agent is included in the Amazon ECS-optimized AMIs, but you can also install it on any Amazon EC2 instance that supports the Amazon ECS specification.
@@ -311,6 +365,14 @@ Placement strategy sample:
 ]
 ```
 
+Cluster Query Language: Cluster queries are expressions that enable you to group objects. For example, you can group container instances by attributes such as Availability Zone, instance type, or custom metadata. You can add custom metadata to your container instances, known as attributes. You can use the built-in attributes provided by Amazon ECS or define custom attributes.
+
+Task Group: A set of related tasks. All tasks with the same task group name are considered as a set when performing spread placement.
+
+Task Placement Constraint: A rule that is considered during task placement. Although it uses cluster queries **when you are placing tasks on container instances based on a specific expression**, it does not provide the actual expressions which are used to group those container instances.
+
+Task Placement Strategy: An algorithm for selecting instances for task placement or tasks for termination.
+
 # Elastic BeanStalk
 
 Elastic Beanstalk recommends one of two methods for performing platform updates.
@@ -328,6 +390,8 @@ Package your application as a **zip** file and deploy it using the **eb deploy**
 
 Amazon SQS FIFO queues follow exactly-once processing. It introduces a parameter called Message Deduplication ID, which is the token used for deduplication of sent messages. Add a MessageDeduplicationId parameter to the SendMessage API request. Ensure that the messages are sent at least 5 minutes apart.
 
+Specify the Amazon Resource Name of the SQS Queue in the Lambda function’s **DeadLetterConfig** parameter.
+
 # Kinesis
 
 Kinesis Client Library
@@ -342,6 +406,12 @@ The purpose of resharding in Amazon Kinesis Data Streams is to enable your strea
 - You merge shards to reduce the cost (and capacity) of your stream.
 
 It is better to use Kinesis instead of Lambda for the real-time data analytics application.
+
+Unlike Kinesis Data Stream service, DynamoDB and Redshift does not provide real time processsing.
+
+If your stream has 100 active shards, there will be at most 100 Lambda function invocations running concurrently. This is because Lambda processes each shard’s events in sequence.
+
+Integrating Amazon Kinesis Data Firehose with the Amazon Kinesis Data Stream to increase the capacity of the stream is incorrect this method will not increase the capacity of the stream as it doesn’t mention anything about resharding.
 
 # Deployment
 
@@ -362,6 +432,8 @@ SAM deployment
 
 - sam package
 - sam deploy
+
+SAM alone is not enough to run the C++ code in Lambda. You have to use a Custom Runtime. So create a new layer which contains the Custom Runtime for C++ and then launch a Lambda function which uses that runtime.
 
 # CloudFormation
 
@@ -386,6 +458,8 @@ Resources:
 stack set is a regional resource so if you create a stack set in one region, you cannot see it or change it in other regions.
 
 [./summary-plus#cloudformation](./summary-plus#cloudformation)
+
+Set up CloudFormation with Systems Manager Parameter Store to retrieve the latest AMI IDs for your template and whenever you decide to update the EC2 instances, call the update-stack API in CloudFormation in your CloudFormation template.
 
 # CodeDeploy
 
