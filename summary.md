@@ -49,6 +49,8 @@ Can a VPC span across regions?
 
 [./summary-plus#vpc-peering](./summary-plus#vpc-peering)
 
+VPC Flow Logs is just a feature that enables you to capture information about the IP traffic going to and from network interfaces in your VPC.
+
 ## AWS Direct Connect
 
 [./summary-plus#aws-direct-connect](./summary-plus#aws-direct-connect)
@@ -118,6 +120,23 @@ For a Lambda function, you can have two types of integration:
 
 ![img](https://docs.aws.amazon.com/apigateway/latest/developerguide/images/apigateway-my-resource-get-method-execution-boxes.png)
 
+The following are the Gateway response types which are associated with the HTTP 504 error in API Gateway:
+
+- INTEGRATION_FAILURE – The gateway response for an integration failed error. If the response type is unspecified, this response defaults to the DEFAULT_5XX type.
+- INTEGRATION_TIMEOUT – The gateway response for an integration timed out error. If the response type is unspecified, this response defaults to the DEFAULT_5XX type.
+
+**For the integration timeout**, the range is from 50 milliseconds to 29 seconds for all integration types, including Lambda, Lambda proxy, HTTP, HTTP proxy, and AWS integrations.
+
+For functions with a long timeout, your client might be disconnected during synchronous invocation while it waits for a response and returns an HTTP 504 error.
+
+In this scenario, there is an issue where the users are getting HTTP 504 errors in the serverless application. This means the Lambda function is working fine at times but there are instances when it throws an error. Based on this analysis, the most likely cause of the issue is the INTEGRATION_TIMEOUT error since you will only get an INTEGRATION_FAILURE error if your AWS Lambda integration does not work at all in the first place.
+
+Since the incoming requests are increasing, the API Gateway automatically enabled throttling which caused the HTTP 504 errors. is incorrect because a large number of incoming requests will most likely **produce an HTTP 502 or 429 error but not a 504 error**.
+
+An authorization failure occurred between API Gateway and the Lambda function usually produces HTTP 403 errors and not 504s.
+
+If executing the function would cause you to exceed a concurrency limit at either the account level (ConcurrentInvocationLimitExceeded) or function level (ReservedFunctionConcurrentInvocationLimitExceeded), Lambda may return a TooManyRequestsException as a response.
+
 Amazon API Gateway does not support unencrypted (HTTP) endpoints. By default, Amazon API Gateway assigns an internal domain to the API that automatically uses the Amazon API Gateway certificate. When configuring your APIs to run under a custom domain name, you can provide your own certificate for the domain.
 
 The base URL for REST APIs is in the following format:
@@ -127,6 +146,21 @@ The base URL for REST APIs is in the following format:
 "Effect": "Allow", "Action": ["execute-api:InvalidateCache"] allows any request to invalidate cache results in API Gateway.
 
 You can use the API Gateway Import API feature to import a REST API from an external definition file (on-premise) into API Gateway. Currently, the Import API feature supports OpenAPI v2.0 and OpenAPI v3.0 definition files.
+
+Amazon API Gateway Lambda proxy integration is a simple, powerful, and nimble mechanism to build an API with a setup of a single API method. The Lambda proxy integration allows the client to call a single Lambda function in the backend. In Lambda proxy integration, when a client submits an API request, API Gateway passes to the integrated Lambda function the raw request as-is. Because API Gateway doesn't intervene very much between the client and the backend Lambda function for the Lambda proxy integration, the client and the integrated Lambda function can **adapt to changes in each other without breaking the existing integration setup of the API**.
+
+For API Gateway to pass the Lambda output as the API response to the client, the Lambda function must return the result in the following JSON format:
+
+```json
+{
+    "isBase64Encoded": true|false,
+    "statusCode": httpStatusCode,
+    "headers": { "headerName": "headerValue", ... },
+    "body": "..."
+}
+```
+
+Since the Lambda function returns the result in XML format, it will cause the 502 errors in the API Gateway.
 
 # S3
 
@@ -235,6 +269,10 @@ You invoke your Lambda function using the Invoke operation, and you can specify 
 - `Event` – Invoke the function asynchronously. Send events that fail multiple times to the function’s dead-letter queue (if it’s configured). The API response only includes a status code.
 - `DryRun`
 
+NAT Gateway and Security group is required by Lambda to connect to internet.
+
+ENI's will be used by Lambda to connect to resources within the AWS network. (This would also require making Lambda private)
+
 # EC2
 
 An EC2 instance needs to have access to the Internet, via the Internet Gateway or a NAT Instance/Gateway in order to access S3.
@@ -242,6 +280,13 @@ An EC2 instance needs to have access to the Internet, via the Internet Gateway o
 - S3 is not part of your VPC, unlike your EC2 instances, EBS volumes, ELBs, and other services that typically reside within your private network. An EC2 instance needs to have access to the Internet, via the Internet Gateway or a NAT Instance/Gateway in order to access S3. Alternatively, you can also create a VPC endpoint so your private subnet would be able to connect to S3.
 
 ![img](https://media.tutorialsdojo.com/amazon-s3-vpc-endpoint.PNG)
+
+You can scale the size of your group **manually** by adjusting your desired capacity, or you can automate the process through the use of scheduled scaling or a scaling policy. The **desired capacity** must be less than or equal to the maximum size of the group. If your new value for Desired capacity is greater than Maximum capacity, you must update Maximum capacity.
+
+By default, your instance is enabled for basic monitoring. You can optionally enable detailed monitoring.
+
+- Basic – Data is available automatically in 5-minute periods at no charge.
+- Detailed – Data is available in 1-minute periods for an additional cost.
 
 # ECS
 
@@ -371,9 +416,24 @@ With X-Ray, you can understand how your application and its underlying services 
 
 - AWS X-Ray works with Amazon EC2, Amazon EC2 Container Service (Amazon ECS), AWS Lambda, and AWS Elastic Beanstalk.
 
-Elastic Beanstalk: Enable the X-Ray daemon by including the xray-daemon.config configuration file in the .ebextensions directory of your source code.
+Elastic Beanstalk: Enable the X-Ray daemon by including the **xray-daemon.config** configuration file in the .ebextensions directory of your source code.
 
 - trace all calls that your Node.js application hosted in elastic beanstalk sends to external HTTP web APIs as well as SQL database queries.
+
+Including the **xray-daemon.config** configuration file in the AMI is incorrect because this configuration file is only applicable in Elastic Beanstalk. You have to install the X-Ray daemon via a user data script.
+
+A segment document can be up to 64 kB and contain a whole segment with subsegments, a fragment of a segment that indicates that a request is in progress, or a single subsegment that is sent separately.
+
+You can send segment documents directly to X-Ray by using the **PutTraceSegments** API.
+
+X-Ray compiles and processes segment documents to generate queryable trace summaries and full traces that you can access by using the **GetTraceSummaries** and **BatchGetTraces** APIs, respectively.
+
+Develop a custom debug tool which will enable them to view the full traces of their application without using the X-Ray console.
+Use the **GetTraceSummaries** API to get the list of trace IDs of the application and then retrieve the list of traces using **BatchGetTraces** API.
+
+Running the **GetTraceSummaries** operation retrieves IDs and annotations for traces available for a specified time frame using an optional filter.
+
+![img](https://docs.aws.amazon.com/xray/latest/devguide/images/scorekeep-filter-httpurlCONTAINSuser-cropped.png)
 
 Segments and subsegments can include an annotations object containing one or more fields that X-Ray indexes for use with filter expressions.
 
@@ -386,6 +446,44 @@ A segment can break down the data about the work done into subsegments.
 - Subsegments provide more granular timing information and details about downstream calls that your application made to fulfill the original request.
 - A subsegment can contain additional details about a call to an AWS service, an external HTTP API, or an SQL database.
 
+Below are the optional subsegment fields:
+
+- namespace – aws for AWS SDK calls; remote for other downstream calls.
+- http – http object with information about an outgoing HTTP call.
+- aws – aws object with information about the downstream AWS resource that your application called.
+- error, throttle, fault, and cause – error fields that indicate an error occurred and that include information about the exception that caused the error.
+- annotations – annotations object with key-value pairs that you want X-Ray to index for search.
+- metadata – metadata object with any additional data that you want to store in the segment.
+- subsegments – array of subsegment objects.
+
+Unlike CloudTrail, X-Ray doesnt record calls made to the AWS resources.
+
 ![img](https://docs.aws.amazon.com/xray/latest/devguide/images/scorekeep-PUTrules-timeline-subsegments.png)
 
 For services that don’t send their own segments like Amazon DynamoDB, X-Ray uses subsegments to generate inferred segments and downstream nodes on the service map. This lets you see all of your downstream dependencies, even if they don’t support tracing, or are external.
+
+Refactoring your application to send segment documents directly to X-Ray by using the **PutTraceSegments API** is incorrect because although this solution will work, it entails a lot of manual effort to perform. You don’t need to do this because you can just install the X-Ray daemon on the instance to automate this process.
+
+# CloudWatch
+
+You can use the CloudWatch agent to collect both system metrics and log files from **Amazon EC2 instances** and **on-premises servers**. Aside from the usual metrics, it also tracks the memory, swap, and disk space utilization metrics of your server.
+
+The data provided by CloudWatch is not as detailed as compared with the Enhanced Monitoring feature in RDS. Take note as well that you do not have direct access to the instances/servers of your RDS database instance, unlike with your EC2 instances where you can install a CloudWatch agent or a custom script to get CPU and memory utilization of your instance.
+
+A namespace is a container for CloudWatch metrics. Metrics in different namespaces are isolated from each other, so that metrics from different applications are not mistakenly aggregated into the same statistics.
+
+AWS_XRAY_DEBUG_MODE is used to configure the SDK to output logs to the console without using a logging library.
+
+AWS_XRAY_TRACING_NAME is primarily used in X-Ray SDK where you can **set a service name** that the SDK uses for segments.
+
+AUTO_INSTRUMENT is primarily used in X-Ray SDK for Django Framework only. This allows the recording of subsegments for built-in database and template rendering operations.
+
+AWS_XRAY_CONTEXT_MISSING: The X-Ray SDK uses this variable to determine its behavior in the event that your function tries to record X-Ray data, but a tracing header is not available. Lambda sets this value to LOG_ERROR by default.
+
+AWS_XRAY_DAEMON_ADDRESS: This environment variable exposes the X-Ray daemon’s address in the following format: IP_ADDRESS:PORT.
+
+\_X_AMZN_TRACE_ID: Contains the tracing header, which includes trace ID, and parent segment ID. If Lambda receives a tracing header when your function is invoked, that header will be used to populate the \_X_AMZN_TRACE_ID environment variable. If a tracing header was not received, Lambda will generate one for you.
+
+# CloudTrail
+
+Although you can indeed use CloudTrail to track the API call, it can’t capture information about the IP traffic of your VPC. So, create a flow log in your VPC to capture information about the IP traffic going to and from network interfaces in your VPC.
