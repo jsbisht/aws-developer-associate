@@ -1,4 +1,46 @@
+# Todo
+
+CloudFormation revision
+
+RDS Encrytion
+
+EB deployment - Immutable
+
+EC2 http://169.254.169.254/latest/userdata/ endpoint.
+
+EC2 http://169.254.169.254/latest/meta-data/ endpoint.
+
+AWS Fargate
+
+EFS
+
+- You cant connect this to CloudFront unlike S3.
+
+PutTraceSegments API
+
+Desired, Minimum and Maximum capacity
+
+**sam publish** vs sam deploy
+
+AWS ACM
+
+AWS SSO and SAML
+
+Region only services - N. Vergina?
+
+CodeDeploy - Deployment Group
+
+KMS features
+
+Cognito User Pool and Identity Pool
+
+AWS STS
+
 # Misc
+
+![img](https://w7e4q5w4.stackpathcdn.com/wp-content/uploads/2020/01/SOAF31-Dedicated-Instances-vs.-Dedicated-Hosts.png)
+
+![img](https://w7e4q5w4.stackpathcdn.com/wp-content/uploads/2020/01/CDAF28-Using-AWS-Lambda-as-a-target-for-Application-Load-Balancer.png)
 
 Note that the number of duplicates due to producer retries is usually low compared to the number of duplicates due to consumer retries.
 
@@ -27,6 +69,10 @@ If you create an AWS account alias for your AWS account ID, your sign-in page UR
 
 Memcached over Redis if you need to run large nodes with multiple cores or threads.
 
+**Amazon Guard​Duty** is incorrect because this is just a threat detection service that continuously monitors for malicious activity and unauthorized behavior to protect your AWS accounts and workloads.
+
+**AWS Firewall Manager** is incorrect because this just simplifies your AWS WAF and AWS Shield Advanced administration and maintenance tasks across multiple accounts and resources.
+
 # Cloud
 
 In the cloud, resources are elastic, meaning they can instantly grow or shrink to match the requirements of a specific application.
@@ -44,17 +90,48 @@ You can also use a combination of ELB and Auto Scaling to maximize the elasticit
 
 # Networking
 
+## Classic Load Balancer and Application Load Balancer
+
+Do nothing, the ELB will direct traffic to it after the health check threshold is passed.
+
 ## VPC
 
 Can a VPC span across regions?
 
-[./summary-plus#vpc-peering](./summary-plus#vpc-peering)
+Yes. Using VPC Peering.
 
-VPC Flow Logs is just a feature that enables you to capture information about the IP traffic going to and from network interfaces in your VPC.
+# VPC Peering
 
-## AWS Direct Connect
+Instances in either VPC can communicate with each other as if they are within the same network. The VPCs can be in different regions (also known as an inter-region VPC peering connection). This is neither a gateway nor a VPN connection, and does not rely on a separate piece of physical hardware.
 
-[./summary-plus#aws-direct-connect](./summary-plus#aws-direct-connect)
+A VPC peering connection helps you to facilitate the transfer of data. For example, if you have more than one AWS account, you can peer the VPCs across those accounts to create a file sharing network. You can also use a VPC peering connection to allow other VPCs to access resources you have in one of your VPCs.
+
+- In case of cross account peering connection, one account creates the peering connection request and other approves the same
+
+Instances in either VPC can communicate with each other as if they are within the same network. The VPCs can be in different regions (also known as an inter-region VPC peering connection). This is neither a gateway nor a VPN connection, and does not rely on a separate piece of physical hardware.
+
+A VPC peering connection helps you to facilitate the transfer of data. For example, if you have more than one AWS account, you can peer the VPCs across those accounts to create a file sharing network. You can also use a VPC peering connection to allow other VPCs to access resources you have in one of your VPCs.
+
+- In case of cross account peering connection, one account creates the peering connection request and other approves the same
+
+# AWS Direct Connect
+
+Direct Connect provides Amazon Web Services (AWS) customers with a way to transfer data that does not involve using the public Internet.
+
+Say your company uses multiple Amazon VPCs and is setting up a new office.
+
+- Establish a private connection from your new office’s network to your Amazon VPC using AWS Direct Connect
+- This option provides predictable network performance, reduces bandwidth costs, and doesn’t require that customers be responsible for implementing high availability solutions for all VPN endpoints.
+- The downside of this option (possible requiring additional telecom and hosting provider relationships) is mitigated in this instance because the office is new and would need to provision a whole new network anyway.
+
+AWS Direct Connect uses dedicated, private network connections between your intranet and Amazon VPC. Use AWS Direct connect:
+
+- If you have an immediate need, have low to modest bandwidth requirements, and can tolerate the inherent variability in Internet-based connectivity.
+- A VPC VPN Connection utilizes IPSec to establish encrypted network connectivity between your intranet and Amazon VPC over the Internet.
+
+You are uploading large amounts of data overnight, 3 to 5 TB to an S3 bucket. What steps can you take to decrease the amount of time to perform these uploads?
+
+Using AWS Direct Connect, data that would have previously been transported over the Internet can now be delivered through a private network connection between AWS and your datacenter or corporate network. In many circumstances, private network connections can reduce costs, increase bandwidth, and provide a more consistent network experience than Internet-based connections.
 
 ## Stateful vs Stateless Firewalls
 
@@ -64,7 +141,7 @@ NACL: Stateless [./vpc.md#network-access-control-list-nacl](./vpc.md#network-acc
 
 Security Group: Stateful [./vpc.md#vpc-security-groups](./vpc.md#vpc-security-groups)
 
-ENI: [./summary-plus.md#eni](./summary-plus.md#eni)
+ENI
 
 ## NAT
 
@@ -72,7 +149,27 @@ Under the lack of abundant public IPv4 addresses, gives private CIDR range outgo
 
 [./vpc.md#network-address-translation-nat](./vpc.md#network-address-translation-nat)
 
+# ENI
+
+An elastic network interface is a logical networking component in a VPC that represents a virtual network card.
+
+It can include the following attributes:
+
+A primary private IPv4 address from the IPv4 address range of your VPC
+
+- One or more secondary private IPv4 addresses from the IPv4 address range of your VPC
+- One Elastic IP address (IPv4) per private IPv4 address
+- One public IPv4 address
+- One or more IPv6 addresses
+- One or more security groups
+
+Each instance has a default network interface, called the primary network interface. You cannot detach a primary network interface from an instance. You can create and attach additional network interfaces. The maximum number of network interfaces that you can use varies by instance type.
+
+- In a VPC, all subnets have a modifiable attribute that determines whether network interfaces created in that subnet (and therefore instances launched into that subnet) are assigned a public IPv4 address. The public IPv4 address is assigned from Amazon's pool of public IPv4 addresses. When you launch an instance, the IP address is assigned to the primary network interface that's created.
+
 # Security
+
+![img](https://w7e4q5w4.stackpathcdn.com/wp-content/uploads/2020/01/CDAF33-AWS-STS-API-Operations-Comparison-Table.png)
 
 For certificates in a Region supported by AWS Certificate Manager (ACM), it is recommended that you use ACM to provision, manage, and deploy your server certificates. In unsupported Regions, you must use **IAM as a certificate manager**.
 
@@ -104,6 +201,27 @@ S3 when using _SSE-C_ requires **x-amz-server-side​-encryption​-customer-alg
 **Encrypt operation** is primarily used to encrypt RSA keys, database passwords, or other sensitive information. This operation can also be used to move encrypted data from one AWS region to another however, this is _not recommended if you want to encrypt your data locally_. You have to use the **GenerateDataKey operation** instead.
 
 Envelope encryption - Encrypt plaintext data with a data key and then encrypt the data key with a top-level plaintext master key.
+
+AWSLambdaDynamoDBExecutionRole includes the following permission:
+
+- dynamodb:DescribeStream
+- dynamodb:GetRecords
+- dynamodb:GetShardIterator
+- dynamodb:ListStreams
+
+**If your identity store is not compatible with SAML 2.0**, then you can build a custom identity broker application to perform a similar function. The broker application authenticates users, requests temporary credentials for users from AWS, and then provides them to the user to access AWS resources.
+
+- The application verifies that employees are signed into the existing corporate network's identity and authentication system, which might use LDAP, Active Directory, or another system.
+- The identity broker application then obtains temporary security credentials for the employees.
+
+  - To get temporary security credentials, the identity broker application calls either **AssumeRole** or **GetFederationToken** to obtain temporary security credentials, depending on how you want to manage the policies for users and when the temporary credentials should expire.
+  - The call returns temporary security credentials consisting of an AWS access key ID, a secret access key, and a session token. The identity broker application makes these temporary security credentials available to the internal company application.
+  - The app can then use the temporary credentials to make calls to AWS directly. The app caches the credentials until they expire, and then requests a new set of temporary credentials.
+
+x-amz-server-side-encryption header can only accept two values: AES256 and aws:kms.
+
+- header should be AES256, which means that the bucket is using Amazon S3-Managed Keys (SSE-S3).
+- if this header has a value of aws:kms, then it uses AWS KMS-Managed Keys (SSE-KMS).
 
 # API Gateway
 
@@ -183,6 +301,10 @@ After attaching the newly created EBS volume to the Linux EC2 instance, Create a
 
 If an EBS volume is the root device of an instance, you must stop the instance before you can detach the volume.
 
+# Database
+
+![img](https://w7e4q5w4.stackpathcdn.com/wp-content/uploads/2020/01/SOAF3-Multi-AZ-Deployments-vs-Read-Replicas.png)
+
 # DynamoDB
 
 To avoid potential throttling, the provisioned write capacity for a global secondary index should be equal or greater than the write capacity of the base table since new updates will write to both the base table and global secondary index.
@@ -250,6 +372,12 @@ To return the number of write capacity units consumed by any of these operations
 - INDEXES — returns the total number of write capacity units consumed, with subtotals for the table and any secondary indexes that were affected by the operation.
 - NONE — no write capacity details are returned. (This is the default.)
 
+DynamoDB Global Table
+
+- The last writer wins
+
+To avoid potential throttling, the provisioned write capacity for a global secondary index should be equal or greater than the write capacity of the base table since new updates will write to both the base table and global secondary index.
+
 # RDS
 
 When switching form RDS database to RDS Read Replicas or ElastiCache Cluster, note that ElastiCache Cluster requires more code change than switching to RDS Read Replicas.
@@ -276,6 +404,8 @@ If you’re using the domain name that CloudFront assigned to your distribution,
 Configuring the ALB to use its default SSL/TLS certificate is incorrect because **there is no default SSL certificate in ELB**, unlike what we have in CloudFront.
 
 # Lambda
+
+![img](https://w7e4q5w4.stackpathcdn.com/wp-content/uploads/2020/01/CDAF1-CodeDeploy-Run-Order-of-Hooks-in-a-Lambda-Function-Version-Deployment.png)
 
 Exponential Backoff: In addition to simple retries, each AWS SDK implements exponential backoff algorithm for better flow control. The idea behind exponential backoff is to use progressively longer waits between retries for consecutive error responses. Jitters are used to randomise retry intervals.
 
@@ -313,6 +443,8 @@ Reserved executions can be set on any or all of the lambdas, in any combination.
 
 With this setup, the reserved concurrency (aka reserved executions) will always remain untouched by the other lambdas even if the lambda for which they were reserved is not using them.
 
+If concurrent execution limit has been reached, the function will be throttled but not terminated. That means additional invocation lambda will not be created, but existing lambda in running state wont be affected by this.
+
 For Lambda functions that process Kinesis or DynamoDB streams, the number of shards is the unit of concurrency. If your stream has 100 active shards, there will be at most 100 Lambda function invocations running concurrently. This is because Lambda processes each shard’s events in sequence.
 
 You invoke your Lambda function using the Invoke operation, and you can specify the invocation type as synchronous or asynchronous. In the Invoke API, you have 3 options to choose from for the InvocationType:
@@ -342,7 +474,18 @@ By default, your instance is enabled for basic monitoring. You can optionally en
 
 EC2 is incorrect because although you can run Docker in your EC2 instances, it does not provide a highly scalable, fast, container management service in comparison to ECS. Take note that in itself, EC2 is not scalable and should be paired with Auto Scaling and ELB.
 
+Instance profile
+
+- Using roles to grant permissions to applications that run on EC2 instances requires a bit of extra configuration. An application running on an EC2 instance is abstracted from AWS by the virtualized operating system. Because of this extra separation, an additional step is needed to assign an AWS role and its associated permissions to an EC2 instance and make them available to its applications.
+- This extra step is the **creation of an instance profile that is attached to the instance**. The **instance profile contains the role** and can provide the role's temporary credentials to an application that runs on the instance. Those temporary credentials can then be used in the application's API calls to access resources and to limit access to only those resources that the role specifies.
+- Note that only one role can be assigned to an EC2 instance at a time, and all applications on the instance share the same role and permissions.
+- Instance profile is just a container for an IAM role that you can use to pass role information to an EC2 instance when the instance starts. This is different from an AWS CLI profile, which you can use for switching to various profiles, _after the instances has started with instance profile_. In addition, an instance profile is associated with the instance and not configured in the AWS CLI.
+
+![img](https://docs.aws.amazon.com/IAM/latest/UserGuide/images/roles-usingrole-ec2roleinstance.png)
+
 # ECS
+
+![img](https://w7e4q5w4.stackpathcdn.com/wp-content/uploads/2020/02/CodeDeploy-Run-Order-of-Hooks-in-an-Amazon-ECS-Deployment.png)
 
 The Amazon ECS container agent is included in the Amazon ECS-optimized AMIs, but you can also install it on any Amazon EC2 instance that supports the Amazon ECS specification.
 
@@ -372,6 +515,8 @@ Task Group: A set of related tasks. All tasks with the same task group name are 
 Task Placement Constraint: A rule that is considered during task placement. Although it uses cluster queries **when you are placing tasks on container instances based on a specific expression**, it does not provide the actual expressions which are used to group those container instances.
 
 Task Placement Strategy: An algorithm for selecting instances for task placement or tasks for termination.
+
+Unlike Elastic Beanstalk, take note that even though you can use Service Auto Scaling in ECS, you still have to enable and configure it.
 
 # Elastic BeanStalk
 
@@ -424,9 +569,37 @@ Performing a Canary deployment is incorrect because this type of deployment is p
 
 # SAM
 
-The AWS Serverless Application Model (AWS SAM) is an open source framework for building serverless applications. It provides shorthand syntax to express functions, APIs, databases, and event source mappings. You define the application you want with just a few lines per resource and model it using YAML.
+The AWS Serverless Application Model (AWS SAM) is an open source framework for building serverless applications. It provides **shorthand** syntax to express functions, APIs, databases, and event source mappings. You define the application you want with just a few lines per resource and model it using YAML.
 
-[./summary-plus#sam](./summary-plus#sam)
+AWS SAM is natively supported by AWS CloudFormation and provides a simplified way of defining the Amazon API Gateway APIs, AWS Lambda functions, and Amazon DynamoDB tables needed by your serverless application. During deployment, SAM transforms and expands the SAM syntax into AWS CloudFormation syntax. Then, CloudFormation provisions your resources with reliable deployment capabilities.
+
+AWS SAM is an extension of AWS CloudFormation, you get the reliable deployment capabilities of AWS CloudFormation. This architecture allows the developers to locally build, test, and debug serverless applications.
+
+- The CLI provides a Lambda-like execution environment locally. It helps you catch issues upfront by providing parity with the actual Lambda execution environment. To step through and debug your code to understand what the code is doing, you can use AWS SAM with AWS toolkits like the AWS Toolkit for JetBrains, AWS Toolkit for PyCharm, AWS Toolkit for IntelliJ, and AWS Toolkit for Visual Studio Code.
+
+For SAM (and Serverless Framework) users, who deal mostly in Lambda functions, one of the more most useful transforms is the Events property on the Lambda function
+
+```yaml
+Resources:
+  HelloWorldFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: HelloWorldFunction
+      Handler: app.lambdaHandler
+      Runtime: nodejs12.x
+      Events: # <--- "Events" property is not a real Cloudformation Lambda property
+        HelloWorld:
+          Type: Api
+          Properties:
+            Path: /hello
+            Method: get
+```
+
+The SAM template snippet shown above gets transformed/expanded into several API Gateway objects (a RestApi, a deployment, and a stage).
+
+- The **AWS::Serverless::Function** type used in this snippet is not a real Cloudformation type -- you won't find it in the docs.
+- SAM expands it into a Cloudformation template containing a **AWS::Lambda::Function** object and several different AWS::ApiGateway::\* objects that Cloudformation understands.
+- if you were authoring pure Cloudformation, you would have had to code all this by hand, over and over, for each API Gateway endpoint that you wanted to create. Now, with a SAM template, you define the API as an "Event" property of the Lambda function, and SAM (or Serverless Framework) takes care of the drudgery.
 
 SAM deployment
 
@@ -434,6 +607,12 @@ SAM deployment
 - sam deploy
 
 SAM alone is not enough to run the C++ code in Lambda. You have to use a Custom Runtime. So create a new layer which contains the Custom Runtime for C++ and then launch a Lambda function which uses that runtime.
+
+Use SAM or Cloudformation
+
+- SAM also gives you additional "transforms" that allow you to define certain concepts concisely, and SAM will figure out what you mean and fill in the the missing pieces to create a full, expanded, legal Cloudformation template.
+- for a simple application with Lambdas triggered by a new API you're creating, the SAM template will let you accomplish this in fewer lines than CloudFormation.
+- If Lambda, APIGW, DDB are the only resources then start with SAM. If you need other resources later (VPCs, CloudWatch, ...) it is not hard to "transition" to a more generic, Cloudformation template that can use both SAM and non-SAM resources.
 
 # CloudFormation
 
@@ -457,9 +636,13 @@ Resources:
 
 stack set is a regional resource so if you create a stack set in one region, you cannot see it or change it in other regions.
 
-[./summary-plus#cloudformation](./summary-plus#cloudformation)
+After you’ve defined a stack set, you can create, update, or delete stacks in the target accounts and regions you specify. When you create, update, or delete stacks, you can also specify operational preferences, such as the order of regions in which you want the operation to be performed, the failure tolerance beyond which stack operations stop, and the number of accounts in which operations are performed on stacks concurrently.
 
 Set up CloudFormation with Systems Manager Parameter Store to retrieve the latest AMI IDs for your template and whenever you decide to update the EC2 instances, call the update-stack API in CloudFormation in your CloudFormation template.
+
+**ZipFile** parameter to is the correct one to be used in this scenario, which will allow the developer to place the python code inline in the template. If you include your function source inline with this parameter, AWS CloudFormation places it in a file named index and zips it to create a deployment package.
+
+The **CodeUri** parameter is incorrect because this is not a valid property of **AWS::Lambda::Function** resource but of the **AWS::Serverless::Function** resource in _AWS SAM_. This parameter accepts the S3 URL of your code and not the actual code itself.
 
 # CodeDeploy
 
@@ -484,6 +667,18 @@ If you choose **Canary10Percent10Minutes** then 10 percent of your customer traf
 
 CodeDeploy agent needs to be installed on EC2 instances while its not required while using CodeDeploy with ECS or Lambda.
 
+# CodePipeline
+
+There are three configuration options for manual approval actions in CodePipeline:
+
+- Publish Approval Notifications: You can configure an approval action to publish a message to an Amazon Simple Notification Service topic when the pipeline stops at the action.
+- Specify a URL for Review: The URL is included in the notification that is published to the Amazon SNS topic. Approvers can use the console or CLI to view it.
+- Enter Comments for Approvers: you can also add comments that are displayed to those who receive the notifications or those who view the action in the console or CLI response.
+
+No Configuration Options
+
+- You can also choose not to configure any of these three options. You might not need them if, for example, you can notify someone directly that the action is ready for their review, or you simply want the pipeline to stop until you decide to approve the action yourself.
+
 # X-Ray
 
 With X-Ray, you can understand how your application and its underlying services are performing to identify and troubleshoot the root cause of performance issues and errors.
@@ -493,6 +688,8 @@ With X-Ray, you can understand how your application and its underlying services 
 Elastic Beanstalk: Enable the X-Ray daemon by including the **xray-daemon.config** configuration file in the .ebextensions directory of your source code.
 
 - trace all calls that your Node.js application hosted in elastic beanstalk sends to external HTTP web APIs as well as SQL database queries.
+
+AWS Lambda: You simply need to tick the Enable AWS X-Ray checkbox in the Lambda function to enable active tracing.
 
 Including the **xray-daemon.config** configuration file in the AMI is incorrect because this configuration file is only applicable in Elastic Beanstalk. You have to install the X-Ray daemon via a user data script.
 
@@ -508,6 +705,8 @@ Use the **GetTraceSummaries** API to get the list of trace IDs of the applicatio
 Running the **GetTraceSummaries** operation retrieves IDs and annotations for traces available for a specified time frame using an optional filter.
 
 ![img](https://docs.aws.amazon.com/xray/latest/devguide/images/scorekeep-filter-httpurlCONTAINSuser-cropped.png)
+
+Fetching the data using the **BatchGetTraces** API is incorrect because this API simply retrieves a list of traces specified by ID. It does not support filter expressions and **it doesnt returns the annotations**.
 
 Segments and subsegments can include an annotations object containing one or more fields that X-Ray indexes for use with filter expressions.
 
@@ -538,6 +737,10 @@ For services that don’t send their own segments like Amazon DynamoDB, X-Ray us
 
 Refactoring your application to send segment documents directly to X-Ray by using the **PutTraceSegments API** is incorrect because although this solution will work, it entails a lot of manual effort to perform. You don’t need to do this because you can just install the X-Ray daemon on the instance to automate this process.
 
+adding annotations in the subsegment section of the segment document is the correct answer.
+
+- Adding annotations in the segment document is incorrect because although the use of annotations is correct, you have to add this in the subsegment section of the segment document since you want to trace the downstream call to RDS and not the actual request to your application.
+
 # CloudWatch
 
 You can use the CloudWatch agent to collect both system metrics and log files from **Amazon EC2 instances** and **on-premises servers**. Aside from the usual metrics, it also tracks the memory, swap, and disk space utilization metrics of your server.
@@ -561,3 +764,25 @@ AWS_XRAY_DAEMON_ADDRESS: This environment variable exposes the X-Ray daemon’s 
 # CloudTrail
 
 Although you can indeed use CloudTrail to track the API call, it can’t capture information about the IP traffic of your VPC. So, create a flow log in your VPC to capture information about the IP traffic going to and from network interfaces in your VPC.
+
+# AppSync
+
+AWS AppSync is quite similar with Amazon Cognito Sync which is also a service for synchronizing application data across devices. It enables user data like app preferences or game state to be synchronized as well however, the key difference is that, it also extends these capabilities by allowing multiple users to synchronize and collaborate in real time on shared data.
+
+![img](https://d1.awsstatic.com/AppSync/product-page-diagram_AppSync@2x.d46d96d1e27169aa5005223299068da899280538.png)
+
+# StepFunctions
+
+SWF is incorrect because this is just a fully-managed state tracker and task coordinator service. It **does not provide serverless orchestration** to multiple AWS resources. Use step functions instead.
+
+# SWF
+
+What is SWF?
+
+You can use **markers** to record events in the workflow execution history for application specific purposes. Markers are useful when you want to record custom information to help implement decider logic. For example, you could use a marker to count the number of loops in a recursive workflow.
+
+Using **Signals** is incorrect because it just enables you to inject information into a running workflow execution. Take note that in this scenario, you are required to record information in the workflow history of a workflow execution.
+
+Using **Timers** is incorrect because it just enables you to notify your decider when a certain amount of time has elapsed and does not meet the requirement in this scenario.
+
+Likewise, using **Tags** is incorrect because it just enables you to filter the listing of the executions when you use the visibility operations, which once again does not meet the requirement in this scenario.
