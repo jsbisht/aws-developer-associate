@@ -120,7 +120,7 @@ Public IPv4 address is not directly attached to the instance or any of the inter
 
 ---
 
-## Elatic IP address
+## Elastic IP address
 
 We can have `1 public elastic IP per private IPv4 address` (One per private IP address)
 

@@ -176,7 +176,7 @@ Stateless firewalls response will be sent on any ephemeral port, as its stateles
 
 Stateful firewalls for this reason, makes setting firewall easy as the response port will be same as the request port. So, full emphemral port range is not kept open.
 
-# NACL, Security Group and ENI relationship
+# NACL, Security Group
 
 NACL: Stateless
 
@@ -218,19 +218,38 @@ Logical referencing scales. So any instances having SG `sg-0123acbd4567/a4l-web`
 
 An elastic network interface is a logical networking component in a VPC that represents a virtual network card.
 
-It can include the following attributes:
-
-A primary private IPv4 address from the IPv4 address range of your VPC
-
-- One or more secondary private IPv4 addresses from the IPv4 address range of your VPC
-- One Elastic IP address (IPv4) per private IPv4 address
-- One public IPv4 address
-- One or more IPv6 addresses
-- One or more security groups
+- Every EC2 has at least one Elastic Network Interface (ENI) which is the primary ENI.
+- We can attach secondary ENIs to an EC2 instance which are in seperate subnets, but everything must be within one AZ.
+- Secondary interfaces function in all the same ways as primary interfaces except you can detach interfaces and move them to other EC2 instances.
+- When you launch an instance, the Security Groups are attached on the network interface and not to the EC2 instance.
 
 Each instance has a default network interface, called the primary network interface. You cannot detach a primary network interface from an instance. You can create and attach additional network interfaces. The maximum number of network interfaces that you can use varies by instance type.
 
 - In a VPC, all subnets have a modifiable attribute that determines whether network interfaces created in that subnet (and therefore instances launched into that subnet) are assigned a public IPv4 address. The public IPv4 address is assigned from Amazon's pool of public IPv4 addresses. When you launch an instance, the IP address is assigned to the primary network interface that's created.
+
+Primary IPv4 private address: Given a DNS name that is associated with the private IP say `ip-10-16-0-10.ec2.internal`. Its only resolvable inside the VPC and always points to private IP address.
+
+Elastic IP address
+
+- We can have `1 public elastic IP per private IPv4 address`
+- Can associate with a private IP on the primary interface or on the secondary interface.
+- If you need different rules for different IPs, then you need to multiple ENI with different Security Group on each.
+
+Public IPv4 address
+
+- If you stop an instance the address is deallocated.
+- When you start up again, it is given a brand new IPv4 address
+- Restarting the instance will not change the IP address
+- Changing between EC2 hosts will change the address
+
+Public IPv4 address is allocated a public DNS name
+
+- Inside the VPC, Public DNS name will resolve to the primary private IPv4 address of the instance
+- Outside the VPC, Public DNS name will resolve to the public IP address
+
+Public IPv4 address is not directly attached to the instance or any of the interface, its associated with it.
+
+- Translation of this address to private IPv4 address is done by AWS Internet Gateway
 
 # NAT
 
@@ -559,6 +578,26 @@ ENI's will be used by Lambda to connect to resources within the AWS network. (Th
 
 # EC2
 
+Bootstrapping is done using user data - accessed via the meta data service. The following gives the user data part of the instance meta data. It logs the user data that was passed to the instance.
+
+    http://169.254.169.254/latest/user-data
+
+Anything you pass in is executed by the instance OS. `It is excecuted only once on launch`!
+
+- User data is limited to 16 KB in size
+- Can be modified when instance is in stopped state
+- Its not secure and shouldnt be used for passwords or long term credentials
+- The scripts are run as `root` user
+
+Instance metadata is data about your instance that you can use to configure or manage the running instance.
+
+- Instance metadata is way the instance or anything inside instance can get information about the environment.
+- Accessible inside all instances.
+
+Instance metadata is accessed from an EC2 instance using
+
+    http://169.254.169.254/latest/meta-data/
+
 An EC2 instance needs to have access to the Internet, via the Internet Gateway or a NAT Instance/Gateway in order to access S3.
 
 - S3 is not part of your VPC, unlike your EC2 instances, EBS volumes, ELBs, and other services that typically reside within your private network. An EC2 instance needs to have access to the Internet, via the Internet Gateway or a NAT Instance/Gateway in order to access S3. Alternatively, you can also create a VPC endpoint so your private subnet would be able to connect to S3.
@@ -583,7 +622,119 @@ Instance profile
 
 ![img](https://docs.aws.amazon.com/IAM/latest/UserGuide/images/roles-usingrole-ec2roleinstance.png)
 
+The instance profile is the item that allows the permissions inside the instance.
+
+- When you create an Instance Role from the management console, InstanceProfile is automatically created with the same name used for Instance Role (eg. ExampleInstanceRole).
+- From CLI both Instance Role and InstanceProfile need to be created individually.
+- When using an Instance Role with EC2 instance, you are not attaching the Instance Role instead its the InstanceProfile thats attached
+
+To check the security credentails in use for a given EC2 instance:
+
+    http://169.254.169.254/latest/meta-data/iam/security-credentials/ExampleInstanceRole
+
+- `Container credentials` – You can associate an IAM role with each of your Amazon Elastic Container Service (Amazon ECS) _task definitions_. Temporary credentials for that role are then available to that task's containers.
+
+- `Instance profile credentials` – You can associate an IAM role with each of your Amazon Elastic Compute Cloud (Amazon EC2) instances. Temporary credentials for that role are then available to code running in the instance. The credentials are delivered through the Amazon EC2 metadata service. **Credentials are delivered through EC2 metadata service**.
+
+EC2 Placement Groups
+
+- Cluster (PERFORMANCE): Close together, Same AZ. If the hardware fails, the entire cluster might fail.
+- Spread (Hardware Failure): Across distinct underlying hardware, Can be multi-AZ. Limits 7 instances per AZ.
+- Partition (Resilience): Groups of instances, no shared hardware b/w groups. Useful when you require more than 7 instances.
+
+The following table shows encryption support for various AMI-copying scenarios.
+
+| Scenario | Description                | Supported |
+| -------- | -------------------------- | --------- |
+| 1        | Unencrypted-to-unencrypted | Yes       |
+| 2        | Encrypted-to-encrypted     | Yes       |
+| 3        | Unencrypted-to-encrypted   | Yes       |
+| 4        | Encrypted-to-unencrypted   | No        |
+
+    You cannot copy an encrypted snapshot to yield an unencrypted one.
+
+EC2 Purchase Options
+
+- On-Demand Instances (Default)
+- Spot Instances
+- Reserved Instances
+- Dedicated Hosts
+- Dedicated Instances
+
+AMI
+
+- AMI can only be used in one region.
+- AMI can be copied between regions
+- An AMI cannot be edited. If you need to update an AMI, launch an instance, make changes and then make new AMI.
+
 # ECS
+
+ECS Cluster
+
+- Clusters is where your containers run from. You provide ECS with an image, and it run that as container inside the cluster.
+- You create a cluster and then either deploy a `Task` or a `Service` within that.
+
+Container definition
+
+- This is used to let ECS know where the container image is located.
+- Also defines the port to be used for creating the container.
+
+Task definition: Task in ECS defines a self contained application. A task can have `one or more` application defined.
+
+```
+TASK
+
+    --- Container Defination
+
+    --- Container Defination
+
+    --- Container Defination
+
+```
+
+Task definition stores the resources used by the task like
+
+- Container definations
+- CPU and Memory
+- Networking mode the task uses
+- Compatibility mode (EC2 vs Fargate mode)
+- Task role
+
+Task role: an IAM role that the task assumes. The task gains temporary credentials that allow access to AWS products and services.
+
+Service defination: defines how we want a task to scale. This allows us to have multiple independent copies of our task to run.
+
+- You can deploy a load balancer in front of the service so that incoming load is distributed across all the tasks.
+- So for tasks running within ECS that are long running, we use a service to provide scalability and high availability.
+- Service lets you replace failed tasks, distribute loads across copies of the task.
+
+ECS users clusters which run in two mode:
+
+- EC2 mode (uses EC2 instances as container hosts, can be seen to be running ECS software)
+- Fargate mode (serverless way of running docker containers where AWS manages the container host part, leaving you to architect your environment using containers)
+
+EC2 mode: The number of containers to be maintained in a cluster is controlled by Auto Scaling Group
+
+- Note that while using EC2 mode, even though the containers are not running on the EC2 instances we will still be billed for them.
+- In EC2 mode, we are responsible for managing the capacity of the cluster
+- ECS will manage the number of task that are deployed if you use service and service defination.
+
+Fargate mode: Removes the management overhead from ECS, no need to manage EC2.
+
+- It differs from EC2 mode in terms of using a `shared fargate infrastructure`, which allows all customers to access from the same pool of resources.
+- Fargate deployment still uses a cluster with a VPC where AZs are specified.
+- Tasks and services are actually running from shared infrastructure, then they are injected into your VPC setup.
+- Each task is given an elastic network interface which has an IP address within the VPC. They then run like an VPC resource.
+
+EC2 vs ECS(EC2) vs Fargate
+
+- If you already are using containers, use **ECS**.
+- **EC2 mode** is good for a large workload with price conscious. This allows for spot pricing and prepayment. But you need to manage the scaling, failing instances, etc.
+- Large workload but overhead conscious **Fargate**.
+- Small or burst style workloads **Fargate** makes sense.
+- Batch or periodic workloads **Fargate**.
+
+Tasks and Services use images on container registry (ECR). Via the task and service defination container images are deployed onto the EC2 host.
 
 ![img](https://w7e4q5w4.stackpathcdn.com/wp-content/uploads/2020/02/CodeDeploy-Run-Order-of-Hooks-in-an-Amazon-ECS-Deployment.png)
 
