@@ -237,7 +237,7 @@ Conditions are evaluated before any logical resource creation starts. It can be 
 
 CloudFormation decides the order based on which resource references other resource. But to explicitly define the dependency you can use DependsOn attribute.
 
-When you add a DependsOn attribute to a resource, that resource is created only after the creation of the resource specified in theDependsOn attribute.
+When you add a DependsOn attribute to a resource, that resource is created only after the creation of the resource, specified in the DependsOn attribute.
 
 Consider the following example where we are creating an VPC and an Internet Gateway.
 

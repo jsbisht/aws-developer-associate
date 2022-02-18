@@ -867,10 +867,276 @@ Use SAM or Cloudformation
 
 # CloudFormation
 
-Cloudfromation deployment
+non-portable template
 
-- aws cloudformation package
-- aws cloudformation deploy
+```yaml
+Resources:
+  Bucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: "accatpics13333337"
+  Instance:
+    Type: "AWS::EC2::Instance"
+    Properties:
+      KeyName: "A4L"
+      InstanceType: "t2.micro"
+      ImageId: "ami-04d29b6f966df1537"
+```
+
+Portable version of the above CFN template is as follows:
+
+```yaml
+Parameters:
+  KeyName:
+    Type: "AWS::EC2::KeyPair::KeyName"
+    Description: "Key Pair for EC2"
+  AMIID:
+    Type: "String"
+    Description: "AMI for EC2"
+Resources:
+  Bucket:
+    Type: "AWS::S3::Bucket"
+  Instance:
+    Type: "AWS::EC2::Instance"
+    Properties:
+      KeyName: !Ref "KeyName"
+      InstanceType: "t2.micro"
+      ImageId: !Ref "AMIID"
+```
+
+To make this even more portable using SSM we can avoid specifying the Key related details in each region:
+
+```yaml
+Parameters:
+  LatestAmiId:
+    Description: "AMI for EC2"
+    Type: "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>"
+    Default: "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+Resources:
+  Bucket:
+    Type: "AWS::S3::Bucket"
+  Instance:
+    Type: "AWS::EC2::Instance"
+    Properties:
+      InstanceType: "t2.micro"
+      ImageId: !Ref "LatestAmiId"
+```
+
+Template and Pseudo Parameters: allow input into CloudFormation. They allow input from console, CLI or API.
+
+```yaml
+Parameters: set of parameters
+
+Resources: set of resources
+```
+
+Pseudo parameters are parameters that are predefined by AWS CloudFormation. You don't declare them in your template. Use them the same way as you would a parameter, as the argument for the Ref function.
+
+```yaml
+Outputs:
+  MyStacksRegion:
+    Value: !Ref "AWS::Region"
+```
+
+Following is the list of Pseudo Parameters that are available:
+
+- AWS::AccountId
+- AWS::NotificationARNs
+- AWS::NoValue
+- AWS::Partition
+- AWS::Region
+- AWS::StackId
+- AWS::StackName
+- AWS::URLSuffix
+
+Intrinsic Functions: Use in your templates to assign values to properties that are not available until runtime. You can use intrinsic functions only in specific parts of a template. Currently, you can use intrinsic functions in `resource properties`, `outputs`, `metadata attributes`, and `update policy attributes`. You can also use intrinsic functions to conditionally create stack resources.
+
+Reference a value from other one
+
+- Ref
+- Fn::GetAtt
+
+Join or split strings
+
+- Fn::Join
+- Fn::Split
+
+Get list of AZs and Select one from the list
+
+    If you have badly configured VPC (say default VPC where you have deleted subnets), then GetAZs might not return all the AZ's.
+
+- Fn::GetAZs
+- Fn::Select
+
+Provision resources based on conditional check
+
+- Condition functions (Fn::IF, And, Equals, Not & Or)
+
+Encode data such as user data and Substitute information based on runtime information
+
+    Self references is invalid with Sub function. As we cannot pass the reference of the EC2 instance before its created.
+
+- Fn::Base64
+- Fn::Sub
+
+Sub function can be passed:
+
+- Parameter value
+- Logical Resource name or id
+- Logical Resource attribute name
+
+Build CIDR block for networking by automatically building subnet ranges
+
+- Fn::Cidr
+
+Others
+
+- Fn::ImportValue
+- Fn::FindInMap
+- Fn::Transform
+
+CloudFormation Mappings: You can create a lookup table in the mapping which can for example be to find a suitable AMI based on region and platform type.
+
+```yaml
+Parameters: set of parameters
+
+Mappings: use to specify conditional parameter values
+
+Resources: set of resources
+```
+
+CloudFormation Outputs: The optional Outputs section declares output values that you can import into other stacks.
+
+```yaml
+Outputs:
+  - Describes the values that are returned whenever you view your stack's properties. Say, while using "aws cloudformation describe-stacks" AWS CLI command
+```
+
+CloudFormation Conditions: Conditions are evaluated before any logical resource creation starts. It can be used to decide whether certain resource should be created or not.
+
+```yaml
+Parameters: set of parameters
+
+Mappings: set of mappings
+
+Resources: set of resources
+
+Conditions:
+  - Conditions that control whether certain resources are created
+  - or whether certain resource properties are assigned a value during stack creation or update.
+  - For example, you could conditionally create a resource that depends on whether the stack is for a production or test environment.
+```
+
+CloudFormation DependsOn: When you add a DependsOn attribute to a resource, that resource is created only after the creation of the resource, specified in the DependsOn attribute.
+
+Implicit dependency - Consider the following example where we are creating an VPC and an Internet Gateway.
+
+- A VPC can be created without creating Internet Gateway first
+- An Internet Gateway can be created without creating an VPC first
+- But an Internet Gateway Attachment which connect both VPC and Internet Gateway, will have to wait until both of them are created first. So, this will implicitly depend on a VPC and Internet Gateway
+
+Explicit dependency - For an elastic IP to successfully be configured through CFN
+
+- It needs to be attached only after an Internet Gateway Attachment is created
+- It needs to be deleted before an Internet Gateway Attachment is deleted
+
+CloudFormation Signal: To send success or failure signals, we use a utility `cfn-signal` running on the EC2 instance.
+
+Creation Policy: Associate the CreationPolicy attribute with a resource to prevent its status from reaching create complete until AWS CloudFormation receives a specified number of success signals or the timeout period is exceeded.
+
+- AutoScalingGroup is waiting for 3 signal
+- Each EC2 instance will send a signal using `cfn-signal`
+
+Wait Conditions: Just like CreationPolicy, this allows resource creation to be paused until timeout or signal is received.
+
+Resources in a single stack `share a lifecycle`. In an isolated stack the resources are created together, updated together and deleted together.
+
+- Designing CFN stack this way is fine until you hit the limits.
+- There is limit of 500 resources per stack.
+- Also, you can't easily reference resources.
+- Also, you can't easily reference other stacks.
+
+CloudFormation Nested Stacks: For complex projects, you are recommended to use Nested Stacks or Cross-Stack references.
+
+- Nested Stacks are usedful when you want to create resources that are `all part of one solution` and are `lifecycle linked`.
+- When you need one portion of the stack to stay longer than the other, nested stack is not the ideal choice.
+- The `Root Stack` can take the `Outputs` from one nested stack (VPCSTACK) and pass it as parameters to another (ADSTACK).
+- Root Stack orchestrates the creation of nested stacks.
+
+CloudFormation Cross-Stack Reference:
+
+CloudFormation Stacks are designed to be isolated and self-contained.
+
+- Outputs are normally not visible from other stacks
+- Nested stacks can reference them
+
+Outputs though can be exported, making them visible from other stacks.
+
+- exports must have a unique name in the region
+- We use `Ref` function to reference resource in the same stack
+- We use `Fn::ImportValue` instead of Ref to use exports of one stack into another
+
+CloudFormation Stack Sets: allows infrastructure to be deployed and managed across multiple regions and multiple accounts from a single location.
+
+StackSets act as containers, in an admin account.
+
+- These containers contains many stack instances
+- Stack instances are reference to stack in a single region, in a single account
+- Stack instances and stack are created in a `target account` (just another aws account that is a target for the stack set to do the deployment)
+
+DeletionPolicy attribute: lets you preserve or (in some cases) backup a resource when its stack is deleted.
+
+- If a resource has no DeletionPolicy attribute, AWS CloudFormation deletes the resource by default.
+- You specify a DeletionPolicy attribute for each resource that you want to control. Possible option are:
+
+  - Delete (default)
+  - Retain
+  - Snapshot (Applicable to EBS, ElastiCache, Neptune, RDS, Redshit)
+
+CloudFormation Stack Roles: While using CFN to create stack that creates physical resources, permission for actions on stack and those physical resources is needed.
+
+- CFN uses the permissions of the logged in identity
+- Admin team can create, update and delete AWS `resources`
+- Then Phil only needs permission for creating, updating and deleting the `stack` and the `PassRole` permission
+
+AWS::CloudFormation::Init
+
+- The configuration for `cfn-init` is stored in the template under `Metadata - AWS::CloudFormation::Init`.
+- `cfn-init` is executed through UserData. it uses the configuration that we have defined under `Metadata - AWS::CloudFormation::Init`.
+
+```yaml
+EC2Instance:
+  MetaData:
+    AWS::CloudFormation::Init
+      ---
+      ---
+      ---
+    UserData:
+      cfn-init: ---
+      cfn-signal: ---
+```
+
+**cfn-init** is run only once as part of bootstraping (user data). If `AWS::CloudFormation::Init` is updated, cfn-init isnt rerun during the UpdateStack API action.
+
+**cfn-hup** helper is a daemon that detects changes in resource metadata and runs user-specified actions when a change is detected.
+
+- This allows you to make configuration updates on your running Amazon EC2 instances through the UpdateStack API action.
+- For the change to be applied, cfn-hub calls cfn-init which uses the new configuration.
+
+CloudFormation ChangeSets: Change sets allow you to preview how proposed changes to a stack might impact your running resources, for example, whether your changes will delete or replace any critical resources.
+
+Custom Resources: enable you to write custom provisioning logic in templates that AWS CloudFormation runs anytime you create, update (if you changed the custom resource), or delete stacks.
+
+- Custom resources can be idenfified in the template using `Type: "Custom:<resource-name>`.
+- CFN doesnt support everything
+- Custom Resources let CFN integrate with anything it doesn't yet or doesnt natively support
+
+CLI
+
+- The `aws cloudformation package` command packages the local artifacts (local paths) that your AWS CloudFormation template references. The command uploads local artifacts, such as source code for an AWS Lambda function or a Swagger file for an AWS API Gateway REST API, to an S3 bucket. The command returns a copy of your template, replacing references to local artifacts with the S3 location where the command uploaded the artifacts.
+- `aws cloudformation validate-template` command will just check the template if it is a valid JSON or YAML file.
+- `aws cloudformation deploy` command uses S3 as the location for artifacts that were defined in the Cloudformation template.
+- `aws cloudformation update-stack` command is used to update the stack.
 
 For serverless applications (also referred to as Lambda-based applications), the **Transform** section **specifies the version of the AWS Serverless Application Model (AWS SAM) to use**. When you specify a transform, you can use AWS SAM syntax to declare resources in your template. The model defines the syntax that you can use and how it is processed. More specifically, the `AWS::Serverless` transform, which is a macro hosted by AWS CloudFormation, takes an entire template written in the AWS Serverless Application Model (AWS SAM) syntax and transforms and expands it into a compliant AWS CloudFormation template.
 
@@ -884,12 +1150,6 @@ Resources:
       Runtime: nodejs8.10
       CodeUri: "s3://testBucket/mySourceCode.zip"
 ```
-
-stack set is a regional resource so if you create a stack set in one region, you cannot see it or change it in other regions.
-
-After you’ve defined a stack set, you can create, update, or delete stacks in the target accounts and regions you specify. When you create, update, or delete stacks, you can also specify operational preferences, such as the order of regions in which you want the operation to be performed, the failure tolerance beyond which stack operations stop, and the number of accounts in which operations are performed on stacks concurrently.
-
-Set up CloudFormation with Systems Manager Parameter Store to retrieve the latest AMI IDs for your template and whenever you decide to update the EC2 instances, call the update-stack API in CloudFormation in your CloudFormation template.
 
 **ZipFile** parameter to is the correct one to be used in this scenario, which will allow the developer to place the python code inline in the template. If you include your function source inline with this parameter, AWS CloudFormation places it in a file named index and zips it to create a deployment package.
 
