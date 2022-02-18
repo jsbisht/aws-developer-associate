@@ -88,19 +88,56 @@ You can also use a combination of ELB and Auto Scaling to maximize the elasticit
 - Amazon EC2 Spot Fleets
 - Amazon DynamoDB
 
-# Networking
+# VPC
 
-## Classic Load Balancer and Application Load Balancer
+- 1 subnet can only be part of 1 AZ
+- 1 VPC can contain multiple AZ.
+- By default subnet within a VPC can communicate with other subnets in the same VPC
+- Regions can only have 1 default VPC and many custom VPCs
 
-Do nothing, the ELB will direct traffic to it after the health check threshold is passed.
+Subnet: Consider a subnet say **10.16.16.0/20**
 
-## VPC
+- Network Address (10.16.16.0)
+- Network + 1 (10.16.16.1) `VPC Router`
+- Network + 2 (10.16.16.2) `Reserved (DNS)`
+- Network + 3 (10.16.16.3) `Reserved Future Use`
+- Broadcast Address (10.16.31.255) `Last IP in the subnet`
+
+VPC Router
+
+- Runs in all the AZ
+- Router has a network address `network + 1` in every subnet in the VPC.
+- Routes traffic between subnets.
+
+DNS
+
+- Provided by Route 53
+- Available on the base IP address of the VPC + 2.
+
+Route Table
+
+- `Route table` associated with the subnet defines what the Router will do with traffic when data leaves that subnet.
+- All the subnets when created are associated with a `main route table`. If we don't associate a `custom route table` with a subnet, it uses the `main route table` of the VPC.
+- If we do associate a `custom route table` we create with a subnet, then the main route table is disassociated.
+- `A subnet can only have one route table associated at a time`.
+
+Internet Gateway
+
+- Regional resilient gateway attached to a VPC.
+- DO NOT NEED one per AZ.
+- `One IGW will cover all AZ's in a region`
+- An IGW can be created and can exist without VPC
+- `It can only be attached to one VPC at a time`.
+- An IGW exists between VPC and AWS public zone.
+- A VPC can have no IGW, which makes it private.
+- The `IGW creates a record that links the instance's private IP to the public IP`.
+- This is why when an EC2 instance is created it `only sees the private IP address`.
+
+# VPC Peering
 
 Can a VPC span across regions?
 
 Yes. Using VPC Peering.
-
-# VPC Peering
 
 Instances in either VPC can communicate with each other as if they are within the same network. The VPCs can be in different regions (also known as an inter-region VPC peering connection). This is neither a gateway nor a VPN connection, and does not rely on a separate piece of physical hardware.
 
@@ -133,21 +170,49 @@ You are uploading large amounts of data overnight, 3 to 5 TB to an S3 bucket. Wh
 
 Using AWS Direct Connect, data that would have previously been transported over the Internet can now be delivered through a private network connection between AWS and your datacenter or corporate network. In many circumstances, private network connections can reduce costs, increase bandwidth, and provide a more consistent network experience than Internet-based connections.
 
-## Stateful vs Stateless Firewalls
+# Stateful vs Stateless Firewalls
 
-## NACL, Security Group and ENI relationship
+Stateless firewalls response will be sent on any ephemeral port, as its stateless. So in the firewall config we need to open all the ephemeral ports.
 
-NACL: Stateless [./vpc.md#network-access-control-list-nacl](./vpc.md#network-access-control-list-nacl)
+Stateful firewalls for this reason, makes setting firewall easy as the response port will be same as the request port. So, full emphemral port range is not kept open.
 
-Security Group: Stateful [./vpc.md#vpc-security-groups](./vpc.md#vpc-security-groups)
+# NACL, Security Group and ENI relationship
 
-ENI
+NACL: Stateless
 
-## NAT
+- Every subnet has an associated NACL which filters the data as it crosses the boundry of the subnet.
+- Only data coming into and out of subnet is affected by NACL
+- Connections within a subnet aren't impacted by NACLs
+- Cannot be assigned to AWS resources, but only subnets
 
-Under the lack of abundant public IPv4 addresses, gives private CIDR range outgoing internet access.
+```
+          |-----    Subnet
+          |
+1 NACL    |-----    Subnet
+          |
+          |-----    Subnet
+```
 
-[./vpc.md#network-address-translation-nat](./vpc.md#network-address-translation-nat)
+| INBOUND |                  |          |            |           |            |
+| ------- | ---------------- | -------- | ---------- | --------- | ---------- |
+| Rule #  | Type             | Protocol | Port Range | Source    | Allow/Deny |
+| 110     | HTTPS(443)       | TCP (6)  | 443        | 0.0.0.0/0 | ALLOW      |
+| \*      | All IPv4 traffic | All      | All        | 0.0.0.0/0 | DENY       |
+
+Security Group: Stateful
+
+- Security Groups (SGs) are another security feature of AWS VPC ... only unlike NACLs they are attached to AWS resources, not VPC subnets.
+- SGs offer a few advantages vs NACLs in that they can recognize AWS resources and filter based on them, they can reference other SGs and also themselves.
+- Security Groups are attached to primary Elastic Network Interfaces (ENIs), not to EC2 instances
+
+App Tier's Security Group might look as follows.
+
+| INBOUND    |          |            |                         |                      |
+| ---------- | -------- | ---------- | ----------------------- | -------------------- |
+| Type       | Protocol | Port Range | Source                  | Description          |
+| Custom TCP | TCP      | 1337       | sg-45670123acbd/a4l-app | inbound from a4l-web |
+
+Logical referencing scales. So any instances having SG `sg-0123acbd4567/a4l-web` attached to them will be able to connect to any instance having SG `sg-45670123acbd/a4l-app` attached to them using port 1337.
 
 # ENI
 
@@ -166,6 +231,41 @@ A primary private IPv4 address from the IPv4 address range of your VPC
 Each instance has a default network interface, called the primary network interface. You cannot detach a primary network interface from an instance. You can create and attach additional network interfaces. The maximum number of network interfaces that you can use varies by instance type.
 
 - In a VPC, all subnets have a modifiable attribute that determines whether network interfaces created in that subnet (and therefore instances launched into that subnet) are assigned a public IPv4 address. The public IPv4 address is assigned from Amazon's pool of public IPv4 addresses. When you launch an instance, the IP address is assigned to the primary network interface that's created.
+
+# NAT
+
+Under the lack of abundant public IPv4 addresses, gives private CIDR range outgoing internet access.
+
+IP masquerading (aka NAT)
+
+- This hides CIDR block behind one IP. This is many private IPs attached to one public IP.
+- Under the lack of abundant public IPv4 addresses, gives private CIDR range **outgoing** internet access.
+- But note that the public IPs cannot connect to these private IP's when NAT is used.
+
+![img](./ss/nat-architecture-2.webp)
+
+We instead choose a NAT Gateway to provide private IP based instances access to internet.
+
+So we provision a NAT Gateway in the public subnet, which allows us to use public IP addresses.
+
+- public subnet has a route table attached to it
+- the route table provides routing of public IP address to Internet Gateway
+- Since NAT gateway is in the pubilc subnet, it can send data out and get a response back
+
+The private instances can also have a route table, which can be different from the public subnet route table.
+
+- we will configure this route table with a default route to point to the NAT gateway
+- so any packet not pointing to the IPs within the VPC will be sent to the NAT gateway
+
+Considerations
+
+- needs to run from a public subnet
+- Uses Elastic IPs (Static IPv4 Public)
+- NAT Gateway only use NACL and dont use Security Group
+
+# Classic Load Balancer and Application Load Balancer
+
+Do nothing, the ELB will direct traffic to it after the health check threshold is passed.
 
 # Security
 
