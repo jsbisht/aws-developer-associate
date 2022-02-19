@@ -1626,6 +1626,46 @@ AWS_XRAY_DAEMON_ADDRESS: This environment variable exposes the X-Ray daemon’s 
 
 Although you can indeed use CloudTrail to track the API call, it can’t capture information about the IP traffic of your VPC. So, create a flow log in your VPC to capture information about the IP traffic going to and from network interfaces in your VPC.
 
+# Cognito
+
+User Pools: Its used for sign-in and sign-up of users. Provides JWT after sign-in through social identities and SAML identity providers (Google, Facebook, SAML2.0, OpenID).
+
+- It does not grant access to AWS services.
+- Associated with sign-up and sign-in (with customizable UI)
+- security features (such as MFA, email verification, compromised credentials check, account takeover protection)
+
+JWT can be used
+
+- to access self-managed server based resources
+- with API Gateway directly
+- for authentication with applications
+- but most AWS services can't use JWT instead require actual AWS credentials
+
+Identity pools - Its used to swap identity token from external identity provider with temporary AWS credentials. It helps to provide **short term AWS Credentials** for your **authenticated users** or **unauthenticated guest users** that need access to AWS services. To gain the authenticated state, a user must be authenticated by a public login provider. This can be:
+
+- Amazon Cognito user pool
+- Public ID providers
+- Open ID connect provider
+
+How Identity Pools work
+
+- Post authentication with the 3rd party IDP, we get a token.
+- **For identity pool to work with these third-party token, each third-party IDP needs to be configured**.
+- Identity Pool is configured with roles for authenticated and unauthenticated identities. It assumes an IAM role defined in Identity Pool and returns temporary AWS credentials.
+- The application can use these temporary credentials to access AWS resources like SQS, DynamoDB, etc.
+
+In an alternate setup, we could let User Pool handle the third party identity providers. This simplifies the management of identity tokens (as you dont have to configure each identity provider).
+
+- The benefit of this setup is that the user will only be authenticated with single identity provider, the User Pool.
+- By using User Pool with social sign, your application can standardize on a single token (User Pool Token - JWT).
+- it doesn’t matter if the user authenticated via an account in the User Pool, or federated access, all tokens will be standardized into a standard token, called a `Cognito User Pool (CUP) token`
+
+After authentication in this setup, User Pool will return a JWT.
+
+- Application can pass this user pool token (JWT) into identity pool.
+- Identity Pool is configured with roles for authenticated and unauthenticated identities. It assumes an IAM role defined in Identity Pool and returns temporary AWS credentials.
+- Now the applicatin can use these credentials to access AWS resources like SQS, DynamoDB, etc.
+
 # AppSync
 
 AWS AppSync is quite similar with Amazon Cognito Sync which is also a service for synchronizing application data across devices. It enables user data like app preferences or game state to be synchronized as well however, the key difference is that, it also extends these capabilities by allowing multiple users to synchronize and collaborate in real time on shared data.
