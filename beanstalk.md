@@ -23,9 +23,7 @@ CloudFormation instead is Infrastructure as Code.
 Docker can have
 
 - single containers
-- multiple containers if your application uses multiple containers
-
-> Multiple containers are orchestrated using ECS
+- multiple containers (Multiple containers are orchestrated using ECS)
 
 Preconfigured docker
 
