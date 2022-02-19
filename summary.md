@@ -344,6 +344,69 @@ x-amz-server-side-encryption header can only accept two values: AES256 and aws:k
 
 # API Gateway
 
+API gateway support a range of authentication methods.
+
+You can make the API complete open access, so no authentication is required.
+
+API gateway can use AWS Cognito User Pools for authentication.
+
+- Client authenticates with Cognito and receives a token
+- The token is then passed in the subsequent requests to API gateway
+- API gateway validates the token with Cognito
+
+API gateway can also be extended to use Lambda based authorisation (earlier known as custom authoriser).
+
+- Client calls API gateway with a bearer token
+- API gateway calls Lambda authorizer to validate the token
+- On successful validation, it `returns an IAM policy and principal identifier` to API gateway. Which `handles the request via Lambda integration`.
+- On failed validation, it returns `403 ACCESS_DENIED` to the client
+
+Endpoint Types
+
+- Edge-Optimized: Uses CloudFront. Requests are routed to nearest CloudFront POP (Point of Presense).
+- Regional Endpoint: Doesnt uses CloudFront network. Used when client are in the same region.
+- Private Endpoint: Accessible only within a VPC via interface endpoint
+
+The base URL for REST APIs is in the following format:
+
+> https://{restapi_id}.execute-api.{region}.amazonaws.com/{stage_name}/{resource}
+
+Parts of the URL (https://xxx.review-api.us-east-1.amazonaws.com/dev/listcats)
+
+- API Gateway Endpoint (https://xxx.review-api.us-east-1.amazonaws.com)
+- Stage (/dev)
+- Resource (/listcats)
+- Within each resource you have methods such as GET, POST.
+
+Integration Types
+
+- MOCK: Used for testing. No backend involved.
+- HTTP: Configure with backend endpoint. You have to configure both integration request and response using mapping template.
+- AWS: Lets an API expose AWS service actions. You have to configure both integration request and response using mapping template.
+- HTTP_PROXY: Pass data as it is from request to integration and response back to client. No configuration of integration request and response.
+- AWS_PROXY: Request is sent as it is as lambda is responsible for using supported format. No configuration of integration request and response.
+
+Mapping templates: sits between the client and integration endpoint, translating the data to/from the integration endpoint. And this is used only when you aren't using proxing.
+
+Stages and Deployments: Changes made in API Gateway are NOT applied directly. Any configuration changes within an API Gateway doesnt take effect until it is deployed.
+
+Stages can be named as per:
+
+- environments (PROD, DEV, TEST)
+- versions (v1, v2, v3)
+
+Each stage has its own configuration.
+
+- unlike Lambda function they are not immutable
+- they can be overwritten and can be rolled back
+
+Stage Variables: You could use a stage variable say `ENV` which in case of:
+
+- DEV stage: points to DEV lambda function alias
+- BETA stage: points to BETA lambda function alias
+- PROD stage: points to PROD lambda function alias
+- And the alias change point to a newer version over time.
+
 API Gateway Lambda Authorizer: When a client makes a request to one of your API’s methods, API Gateway calls your **Lambda authorizer**, which takes the caller’s identity as input and returns an IAM policy as output.
 
 There are two types of Lambda authorizers:
@@ -375,13 +438,11 @@ Since the incoming requests are increasing, the API Gateway automatically enable
 
 An authorization failure occurred between API Gateway and the Lambda function usually produces HTTP 403 errors and not 504s.
 
+A response code of 2xx indicates the operation was successful. Other error codes indicate either a client error (4xx) or a server error (5xx).
+
 If executing the function would cause you to exceed a concurrency limit at either the account level (ConcurrentInvocationLimitExceeded) or function level (ReservedFunctionConcurrentInvocationLimitExceeded), Lambda may return a TooManyRequestsException as a response.
 
 Amazon API Gateway does not support unencrypted (HTTP) endpoints. By default, Amazon API Gateway assigns an internal domain to the API that automatically uses the Amazon API Gateway certificate. When configuring your APIs to run under a custom domain name, you can provide your own certificate for the domain.
-
-The base URL for REST APIs is in the following format:
-
-> https://{restapi_id}.execute-api.{region}.amazonaws.com/{stage_name}/
 
 "Effect": "Allow", "Action": ["execute-api:InvalidateCache"] allows any request to invalidate cache results in API Gateway.
 

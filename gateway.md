@@ -118,7 +118,7 @@ Note the parts of URL
 
 - API Gateway Endpoint (https://xxx.review-api.us-east-1.amazonaws.com)
 - Stage (/dev)
-- Resource (/listreviews)
+- Resource (/listcats)
 
 ![img](./imgs/gateway/APIGW_MethodsAndResources.webp)\
 
