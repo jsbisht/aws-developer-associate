@@ -46,7 +46,8 @@ Capacity is set per WCU or RCU
 
 ```
 1 WCU means you can write 1KB per second to that table
-1 RCU means you can read 4KB per second for that table
+1 RCU means yTo avoid potential throttling, the provisioned write capacity for a global secondary index should be equal or greater than the write capacity of the base table since new updates will write to both the base table and global secondary index.
+ou can read 4KB per second for that table
 ```
 
 ![img](./imgs/dynamo-db/DDB-Tables.webp)

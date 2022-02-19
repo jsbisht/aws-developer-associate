@@ -426,42 +426,141 @@ If an EBS volume is the root device of an instance, you must stop the instance b
 
 # DynamoDB
 
-To avoid potential throttling, the provisioned write capacity for a global secondary index should be equal or greater than the write capacity of the base table since new updates will write to both the base table and global secondary index.
+Every item (table row) in the table needs a unique primary key.
 
-DynamoDB adaptive capacity automatically boosts throughput capacity to high-traffic partitions. However, each partition is still subject to the hard limit. This means that adaptive capacity can’t solve larger issues with your table or partition design. To avoid hot partitions and throttling, optimize your table and partition structure.
+Each item (table row) can be `at most 400KB` in size. This includes the primary key and attributes.
 
-To solve this issue, consider one or more of the following solutions:
+On-demand Backups
 
-– Increase the amount of read or write capacity for your table to anticipate short-term spikes or bursts in read or write operations. If you decide later you don’t need the additional capacity, decrease it. Take note that Before deciding on how much to increase read or write capacity, consider the best practices in designing your partition keys.
+- Full backup of the table that is retained until you manually remove that backup.
+- This can be used to restore data in the same region or cross-region.
 
-– Implement error retries and exponential backoff. This technique uses progressively longer waits between retries for consecutive error responses to help improve an application’s reliability. If you’re using an AWS SDK, this logic is built‑in. If you’re using another SDK, consider implementing it manually.
+Point-in-time Recovery
 
-– Distribute your read operations and write operations as evenly as possible across your table. A “hot” partition can degrade the overall performance of your table.
+- Must be enabled on each table and is off by default.
+- This allows continous record of changes for 35 days to allow you to replay any point in that window to a 1 second granularity.
 
-– Implement a caching solution, such as DynamoDB Accelerator (DAX) or Amazon ElastiCache. DAX is a DynamoDB-compatible caching service that offers fast in‑memory performance for your application. If your workload is mostly read access to static data, query results can often be served more quickly from a well‑designed cache than from a database.
+DynamoDB has two read/write capacity modes for processing reads and writes on your tables:
+
+- On-demand: without capacity planning. pay-per-request pricing for read and write requests so that you pay only for what you use.
+- Provisioned (default, free-tier eligible)
+
+On-Demand
+
+- unknown or unpredictable load on a table.
+- This is also good for as little admin overhead as possible. Pay a price per million Read or Write units.
+- This is as much as **5 times the price as provisioned**.
+
+Provisioned
+
+- RCU and WCU set on a per table basis.
+- `Every operation consumes at least 1 RCU/WCU`
+
+```
+1 RCU = 1 x 4KB read operation per second. (Even 1KB read will consume 1RCU).
+1 WCU = 1 x 1KB write operation per second.
+```
+
+Every single table has a WCU and RCU burst pool.
+
+- This is 300 seconds of RCU or WCU as set by the table.
+
+Query can accept:
+
+- Simple primary key (just the partition key)
+- Composite primary key (uses both the partition key and sort key)
+
+Eventually consistent reads are charged half the price of Strongly consistent reads
+
+- Say we have 3 AZs containing one storage node each, having same data.
+- One storage node is chosen as the `Leader`.
+- Strongly consistent reads connect to leader node to get the latest data
+
+DyanamoDB directs the write at the leader storage node, which is elected from the three storage nodes.
+
+- the leader node replicates the data to other nodes, which usually happens within milliseconds
 
 About local secondary indexes:
 
-– For each partition key value, the total size of all indexed items must be 10 GB or less.
-– When you query this index, you can choose either eventual consistency or strong consistency.
-– Queries or scans on this index consume read capacity units from the base table
+- LSI cannot be added after the table is created.
+- Maximum of 5 LSI's per base table.
+- LSI allows `using alternative sort key` on the table but `the same partition key`.
+  – For each partition key value, the total size of all indexed items must be 10 GB or less.
+  – When you query this index, you can choose either eventual consistency or strong consistency.
+  – Queries or scans on this index consume read capacity units from the base table
 
 Global secondary indexes:
 
+- Can be created at any time and much more flexible.
+- There is a default limit of 20 GSIs for each table.
+- This allows for `alternative sort key` and `as well as partition key`.
 - Queries on this index support eventual consistency only.
+- Replication between base table and GSI is asynchronous
 
-Suppose that each item is 4 KB and you set the page size to 40 items. A Query request would then consume only 20 eventually consistent read operations or 40 strongly consistent read operations.
+DynamoDB Streams
 
-- A larger number of smaller Query or Scan operations would allow your other critical requests to succeed without throttling, instead of using large page size.
+- It uses Kinesis streams behind the scenes.
+- This is enabled on a per table basis. This records
 
-You may use ElastiCache as your database cache, it will not reduce the DynamoDB response time to microseconds unlike DynamoDB DAX.
+  - Inserts
+  - Updates
+  - Deletes
 
-Increasing the amount of read or write capacity for your table is incorrect because although it will also solve the throttling issues of your application, adding both RCU and WCU to your table will significantly increase your operating costs.
+- Different view types influence what is in the stream.
+- There are four view types that a stream can be configured with:
 
-Implementing **read sharding** to distribute workloads evenly is incorrect because you should implement a **write sharding** in your application instead. One way to better distribute writes across a partition key space in DynamoDB is to expand the space.
+  - KEYS_ONLY
+  - NEW_IMAGE
+  - OLD_IMAGE
+  - NEW_AND_OLD_IMAGES
 
-- Sharding Using Random Suffixes: You can add a random number to the partition key values to distribute the items among partitions.
-- Sharding Using Calculated Suffixes: You can use a number that is calculated based on something that you are querying on.
+DynamoDB Triggers
+
+- Allow for actions to take place in the event of a change in data.
+- Item change generates an event which contains the data which was changed. The data contained `depends on the view type`.
+- So Lambda can respond to any data change operation that had caused the `Stream Event`.
+
+DynamoDB Accelerator (DAX)
+
+- This is an in memory cache for DynamoDB
+- Not ideal if you need strongly consistent reads
+- Used if you need really low response time at scale
+- Traditional Cache: a seperate operation is needed to load data from database on cache miss.
+- DAX: DAX gets the data from cache on hit and from DynamoDB on cache miss. This is one set of API calls and is much easier for the developers.
+
+DAX maintains two different caches:
+
+1. Item Cache - This caches individual items retrieved via `GetItem` or `BatchGetItem` operation
+2. Query Cache - This caches the `results of Query and Scan operation` including the parameters used.
+
+Every DAX cluster, similar to RDS, has an endpoint which is load balanced across the cluster.
+
+- Cache hits are returned in about 400 microseconds
+- Cache miss can be returned in single digit milliseconds.
+
+Global tables provide multi-master cross-region replication.
+
+- no table is considered as master
+- no table is considered as replica
+- all tables are considered the same
+- During a conflict between the tables, last writer wins, its changes are then replicated across
+- **Global eventual consistency** but can have same region strongly consistent
+
+DynamoDB Time-To-Live (TTL)
+
+- A process periodically run on the partitions for items that have expired based on the TTL attribute.
+- Items where the TTL attribute is older than current time, they are set to expired
+- These are not deleted immediately
+- Another process periodically runs on the partitions and deletes the items that have expired
+- A delete is added to streams if enabled
+- The delete operations run in the background and dont cause any impact on table performance.
+- Also, these operations arent chargable.
+
+Elasticache is a managed in-memory cache which provides a managed implementation of the `redis` or `memcached` engines.
+
+- To add ElastiCache into the application, `code changes are required`.
+- Use memcached engine for Multi-threaded use cases. Else use redis.
+- Use redis for strong consistency
 
 Locking
 
@@ -470,10 +569,7 @@ Locking
 - conditional writes: By default, the DynamoDB write operations (PutItem, UpdateItem, DeleteItem) are **unconditional**: each of these operations will overwrite an existing item that has the specified primary key. DynamoDB optionally supports **conditional writes** for these operations. A conditional write will succeed only if the item attributes meet one or more expected conditions. Otherwise, it returns an error.
 - atomic counters: You might use an atomic counter to track the number of visitors to a website. In this case, your application would increment a numeric value, regardless of its current value. If an UpdateItem operation fails, the application could simply retry the operation. This would risk updating the counter twice, but you could probably tolerate a slight overcounting or undercounting of website visitors. An atomic counter would **not be appropriate where overcounting or undercounting can't be tolerated**. In such case use conditional write instead.
 
-DynamoDB has two read/write capacity modes for processing reads and writes on your tables:
-
-- On-demand: without capacity planning. pay-per-request pricing for read and write requests so that you pay only for what you use.
-- Provisioned (default, free-tier eligible)
+To avoid potential throttling, the provisioned write capacity for a global secondary index should be equal or greater than the write capacity of the base table since new updates will write to both the base table and global secondary index.
 
 A write capacity unit (WCU) represents one write per second, for an item up to **1KB** in size.
 
@@ -496,6 +592,29 @@ DynamoDB Global Table
 - The last writer wins
 
 To avoid potential throttling, the provisioned write capacity for a global secondary index should be equal or greater than the write capacity of the base table since new updates will write to both the base table and global secondary index.
+
+Suppose that each item is 4 KB and you set the page size to 40 items. A Query request would then consume only 20 eventually consistent read operations or 40 strongly consistent read operations.
+
+- A larger number of smaller Query or Scan operations would allow your other critical requests to succeed without throttling, instead of using large page size.
+
+DynamoDB adaptive capacity automatically boosts throughput capacity to high-traffic partitions. However, each partition is still subject to the hard limit. This means that adaptive capacity can’t solve larger issues with your table or partition design. To avoid hot partitions and throttling, optimize your table and partition structure. To solve this issue, consider one or more of the following solutions:
+
+– Increase the amount of read or write capacity for your table to anticipate short-term spikes or bursts in read or write operations. If you decide later you don’t need the additional capacity, decrease it. Take note that Before deciding on how much to increase read or write capacity, consider the best practices in designing your partition keys.
+
+– Implement error retries and exponential backoff. This technique uses progressively longer waits between retries for consecutive error responses to help improve an application’s reliability. If you’re using an AWS SDK, this logic is built‑in. If you’re using another SDK, consider implementing it manually.
+
+– Distribute your read operations and write operations as evenly as possible across your table. A “hot” partition can degrade the overall performance of your table.
+
+– Implement a caching solution, such as DynamoDB Accelerator (DAX) or Amazon ElastiCache. DAX is a DynamoDB-compatible caching service that offers fast in‑memory performance for your application. If your workload is mostly read access to static data, query results can often be served more quickly from a well‑designed cache than from a database.
+
+You may use ElastiCache as your database cache, it will not reduce the DynamoDB response time to microseconds unlike DynamoDB DAX.
+
+Increasing the amount of read or write capacity for your table is incorrect because although it will also solve the throttling issues of your application, adding both RCU and WCU to your table will significantly increase your operating costs.
+
+Implementing **read sharding** to distribute workloads evenly is incorrect because you should implement a **write sharding** in your application instead. One way to better distribute writes across a partition key space in DynamoDB is to expand the space.
+
+- Sharding Using Random Suffixes: You can add a random number to the partition key values to distribute the items among partitions.
+- Sharding Using Calculated Suffixes: You can use a number that is calculated based on something that you are querying on.
 
 # RDS
 
@@ -523,6 +642,118 @@ If you’re using the domain name that CloudFront assigned to your distribution,
 Configuring the ALB to use its default SSL/TLS certificate is incorrect because **there is no default SSL certificate in ELB**, unlike what we have in CloudFront.
 
 # Lambda
+
+- Docker is not supported or is an anti-pattern with Lambda functions.
+- Custom runtimes such as `Rust` are possible using `layers`.
+  vCPU is allocated indirectly relative to the memory
+- This can be from 128MB to 3GB (64MB steps increment allowed)
+- 512 MB storage avaiable as `/tmp`
+- 900s (15 minutes) function timeout
+
+An Execution Role is required for Lambda function to work.
+
+- Execution Role is assumed by the Lambda function
+- This provides permissions to interact with other AWS services
+
+Lambda executions have lifecycles:
+
+- `INIT` - Creates or Unfreezes the execution environment.
+- `INVOKE` - Runs the function handler (Cold start). Subsequent invocation will run in the same execution environment as last time (Warm start).
+
+The function init part, which is only called once during the initialization (only during cold start). This is `outside the handler`.
+
+- Apart from the initial cold start, handler function is executed during every invocation.
+
+Provisioned Concurrency: If you are going to use lots of Lambda function at the same time, you can use provisioned concurrency to pre-warm the execution environments.
+
+Lambda Versions
+
+- Lambda function has version which is a combination of code and configuration of the lambda function.
+- Every version of the lambda function is immutable
+- Each version is immutable and cannot change once published
+- Every lambda function version gets its own ARN (Amazon Resource Name)
+- `$latest` points to the latest version. (So this is mutable and keeps changing)
+- Lambda points to unqualified ARN `until its published`
+- Once published, a Lambda gets qualified ARN
+
+Lambda Alias
+
+- **Each Alias has a unique ARN**. Aliases can be updated, changing which version they reference.
+- Alias such as DEV, STAGE, PROD point to a version.
+- Weighted Alias under Alias configuration for an Alias can be used to distribute load across versions
+
+Environment Variables
+
+- By default they are associated with $latest
+- Once you publish a version, environment variables associated with the version become immutable within that version.
+- KMS can be used for encryption.
+
+Encrypting Lambda Environment Variables
+
+- By default, when you create or update Lambda functions that use environment variables, those variables are encrypted using AWS KMS. When your Lambda function is invoked, those values are decrypted and made available to the Lambda code. You have the option to use the default KMS key for Lambda or specify a specific CMK of your choice.
+- To further protect your environment variables, you should select the “Enable encryption helpers” checkbox. By selecting this option, your environment variables will also be individually encrypted using a CMK of your choice, and then your Lambda function will have to specifically decrypt each encrypted environment variable that is needed.
+
+Lambda Layers: Layers allow new runtimes and allow libraries to be externailized. Deployment zips are smaller with shared libraries reused between functions through layers. The `import` dependencies for example can be imported as part of a layer. You can choose to import dependencies either bundled as part of the lambda package or choose a layer:
+
+- AWS Layers
+- Custom Layers
+- Specify an ARN
+
+Lambda Container Images: Historically with Lambda you could not use your existing container image setup and CI/CD process. Also, locally testing lambda function before deployment was a challenge.
+
+- With Lambda Container images you can use Lambda as part of your existing container processes.
+- This is done by inclusion of `Lambda Runtime API` within the container image
+- This package allows interaction between the lambda and the container
+- You can also include `Lambda Runtime Interface Emulator (RIE)` to emulate lambda interfaces to do the local testing.
+
+Lambda & ALB Integration
+
+- You can use a Lambda function to `process requests from an Application Load Balancer`.
+- Elastic Load Balancing supports Lambda functions as a target for an Application Load Balancer.
+- Elastic Load Balancing invokes your Lambda function **synchronously** with an event that contains the request body and metadata, and `waits for the response`.
+- ALB translates the request into Lambda compatible event (JSON) and Lambda responds in JSON that is translated back to HTTP response.
+- Without using Multi-Value headers only the last duplicate value is sent to the Lambda function.
+- With Multi-Value Headers, you get the duplicate query params as an array.
+
+By default, lambda functions are given public networking.
+
+- They can access public AWS services and the public internet.
+- But `they cannot access private VPC resources`.
+- They can access _public space AWS services such as S3, SQS and DyanamoDB_
+- They can access internet based services such as Imdb api.
+- Lambda running with public networking offers best performance because no VPC networking is required
+
+Lambda inside VPC
+
+- Lambda functions running within VPC `can access any resources within the VPC`, if the NACL and Security Groups allow that access.
+- But Lambda functions running within VPC `cannot access any external resources outside VPC`, **until NACL and Security Groups allow that access**.
+- Lambda inside VPC behaves same as any other VPC service, the same Gateway and Configurations are needed to allow access to AWS public zone and the public internet
+
+In case the Lambda function within VPC needed access to internet resources
+
+- You can deploy a NAT Gateway in the public subnet
+- And then attach a `Internet Gateway` to the VPC
+
+ENI
+
+- Earlier each of the Lambda function when invoked, created a ENI in the customer VPC, posing scaling related challenges.
+- Now if all your Lambda used a collection of subnets but the same Security Group, then **only one ENI is required per subnet**.
+
+Execution Role Permissions Policy: controls the permissions a lambda function receives
+
+Lambda Resource Policy: controls WHAT can invoke a lambda function
+
+Types of invocations
+
+1. Synchronous: Used when a user is performing the invocation. The client needs to handle the errors and retries.
+2. Asynchronous: Used when an AWS service is performing the invocation. Lambda function will perform retries (re-processing) in case of failures. Lambda will perform 0 to 2 retries. Lambda function needs to be idempotent, so that retries doesn't impact the system in incorrect way.
+3. Event Source Mapping: Event Source Mapping `reads/polls` the stream or queue and deliver `event batches` to lambda. Event batches either are processed OK or FAIL as a batch. SQS Queues and SNS topics can be used for any discarded failed event batches.
+
+EventBridge (replaces CloudWatch Events)
+
+- **CloudWatch Events** and **EventBridge** have visibility over events generated by supported AWS services within an account.
+- They both can monitor the `default account event bus` - and can **pattern match events** flowing through the event bus and deliver these events to multiple targets (eg. Lambda).
+- They are also the source of `scheduled events` which `can perform certain actions at certain times` of day, days of the week, or using the Unix CRON time.
 
 ![img](https://w7e4q5w4.stackpathcdn.com/wp-content/uploads/2020/01/CDAF1-CodeDeploy-Run-Order-of-Hooks-in-a-Lambda-Function-Version-Deployment.png)
 
@@ -575,6 +806,16 @@ You invoke your Lambda function using the Invoke operation, and you can specify 
 NAT Gateway and Security group is required by Lambda to connect to internet.
 
 ENI's will be used by Lambda to connect to resources within the AWS network. (This would also require making Lambda private)
+
+You can enable `Active Tracing` on a function for X-Ray to show the flow of requests through your application.
+
+- `AWSXrayDaemonWriteAccess` managed policy should be part of the execution role.
+- Once this policy is added to the role, X-Ray SDK can be used within your function for tracing
+- Enable active tracing via CLI using:
+
+```
+aws lambda update-function-configuration --function-name <function-name> --tracing-config Mode=Active
+```
 
 # EC2
 

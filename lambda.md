@@ -386,7 +386,7 @@ Event Source Mapping uses permission from the Lambda Execution Role.
 
 #### DLQ
 
-SQL Queues and SNS topics can be used for any discarded failed event batches
+SQS Queues and SNS topics can be used for any discarded failed event batches
 
 ---
 
