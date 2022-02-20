@@ -463,6 +463,81 @@ For API Gateway to pass the Lambda output as the API response to the client, the
 
 Since the Lambda function returns the result in XML format, it will cause the 502 errors in the API Gateway.
 
+# Cloudfront
+
+```
+Distribution
+   |
+   |----> Behaviour
+   |----> Behaviour
+              |
+              |----> Configured with path patterns
+```
+
+CloudFront Distribution contains the configuration deployed to the edge locations
+
+- A distribution can have many behaviours, each configured with path pattern
+- If request matches the path pattern, assocated behaviour is used else default
+
+CloudFront Behaviours control much of the **TTL**, protocol and privacy settings within CloudFront. By default Origins are used by behaviours.
+
+- Each behaviour works based on a precedence value and/or path patttern. Anything that matches will be prioritized over the default behaviour setting.
+
+TTL
+
+- Default TTL (behaviour) is 24 hours validity
+- TTL per object is set via `Cache-Control max-age`, `Cache-Control s-maxage` and `Expires` origin header
+- You can set `Minimum TTL` and `Maximum TTL` values that **act as limiter** on the per object TTL settings
+- If the per object TTL is below Minimum TTL, then minimum TTL applies instead. And if its above Maximum TTL, then maximum TTL applies.
+
+Cache Invalidation patterns that are used to match objects that needs to be invalidated:
+
+```
+/images/cat.jpg
+/images/cat*
+/images/*
+/*
+```
+
+- Irrespective of how many objects are matched, the price for performing invalidation remains the same.
+- versioned filenames can be used to omit invalidation needs
+
+Cloudfront and SSL/TLS
+
+- If you use HTTPS you need a certificate applied to the distribution
+- You can either generate or import a SSL certificate from AWS Certificate Manager (ACM)
+- ACM is a regional service and you need to add the certificate in the same region as the service you are using.
+- Application load balancer (ALB) in asia-south-1a need ACM from the same region.
+- Cloudfront is a global service. The certificate should be added in region `us-east-1` (Northern Virginia) only.
+- S3 origins doesnt require certificate management. S3 handles certificates natively.
+- Self signed certificates will not work. Only publicly trusted certificates are valid.
+- With Custom Origin EC2 or On-Premise servers we need to apply certificate manually
+
+For all the cases, the certificate needs to match the DNS name of the origin.
+
+- From the viewer side, the certificate applied to Cloudfront needs to match the DNS name of, whatever your customer are using, to access Cloudfront.
+- On the origin side, the certificate installed on any of your origin needs to match the DNS name of what Cloudfront is using to contact the origin.
+
+Use ACM to apply SSL certificate to your custom domain. You need to be doing this while using `us-east-1` region selected in AWS.
+
+- You need a hosted zone for this domain under **Route53**
+- To your Cloudfront distribution, add mapping to your custom domain by adding it as CNAME
+- While requesting certificate specify the fully qualified domain name, which needs to match the CNAME you have added in Cloudfront distribution
+
+With SNI a server hosting multiple domain (at a single IP address where each uses different SSL cert), can respond to each request with right certificate based on the domain being requested.
+
+- Historically this was not possible. Recently SNI has been introduced as a TLS extension, allowing host to be included during TLS handshake before HTTP gets involved (Presentation layer)
+- Older browsers don't support SNI. Cloudfront allows us to use dedicated IP's for each custom domain in such cases (at an extra cost. $600 monthly).
+- Each custom domain requires a different cert to prove its identity
+
+Origin Access Identity (OAI): You can configure an S3 bucket as the origin of a CloudFront distribution. OAI prevents users from viewing your S3 files by simply using the direct URL for the file. Instead, they would need to access it through a CloudFront URL.
+
+If you’re using the domain name that CloudFront assigned to your distribution, such as dtut0ria1sd0jo.cloudfront.net, you can change the **Viewer Protocol Policy setting** for one or more cache behaviors to **require HTTPS communication** by setting it as either Redirect HTTP to HTTPS, or HTTPS Only.
+
+**If your origin is an Elastic Load Balancing load balancer**, you can use a certificate provided by AWS Certificate Manager (ACM). You can also use a certificate that is signed by a trusted third-party certificate authority and imported into ACM. Note that you can’t use a self-signed certificate for HTTPS communication between CloudFront and your origin.
+
+Configuring the ALB to use its default SSL/TLS certificate is incorrect because **there is no default SSL certificate in ELB**, unlike what we have in CloudFront.
+
 # S3
 
 **put-bucket-policy** command can only be used to apply policy at the bucket level, not on objects. You can use S3 Access Control Lists (ACLs) instead to manage permissions of S3 objects.
@@ -691,16 +766,6 @@ Caching strategies
 - Write-through
 - Russian doll - this strategy configures your cache to have nested records
 - Adding TTL
-
-# Cloudfront
-
-Origin Access Identity (OAI): You can configure an S3 bucket as the origin of a CloudFront distribution. OAI prevents users from viewing your S3 files by simply using the direct URL for the file. Instead, they would need to access it through a CloudFront URL.
-
-If you’re using the domain name that CloudFront assigned to your distribution, such as dtut0ria1sd0jo.cloudfront.net, you can change the **Viewer Protocol Policy setting** for one or more cache behaviors to **require HTTPS communication** by setting it as either Redirect HTTP to HTTPS, or HTTPS Only.
-
-**If your origin is an Elastic Load Balancing load balancer**, you can use a certificate provided by AWS Certificate Manager (ACM). You can also use a certificate that is signed by a trusted third-party certificate authority and imported into ACM. Note that you can’t use a self-signed certificate for HTTPS communication between CloudFront and your origin.
-
-Configuring the ALB to use its default SSL/TLS certificate is incorrect because **there is no default SSL certificate in ELB**, unlike what we have in CloudFront.
 
 # Lambda
 
