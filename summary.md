@@ -342,6 +342,97 @@ x-amz-server-side-encryption header can only accept two values: AES256 and aws:k
 - header should be AES256, which means that the bucket is using Amazon S3-Managed Keys (SSE-S3).
 - if this header has a value of aws:kms, then it uses AWS KMS-Managed Keys (SSE-KMS).
 
+# Route 53
+
+Route53 consists of private and public hosted zones.
+
+- When a domain is registered, TLD holds the NS records. NS records point to Name Servers in the hosted zone. Then the Name Server and the zone they host become authoritative for that domain.
+- The zone file is hosted on these Name Servers
+- This is globally resilient service. So whole region can be affected, but Route53 will still function.
+
+Public Hosted Zone: is a DNS database (`containing zone files`) for a specific domain, hosted by Route53 on Public Name Servers. A Public Hosted Zone can be created for a domain registered with Route53 or with other registrars.
+
+```
+                      |---> NS --- zone file
+                      |---> NS --- zone file
+Public Hosted Zone ---|---> NS --- zone file
+                      |---> NS --- zone file
+
+```
+
+- Whenever you create a public hosted zone, Route53 `creates 4 Public Name Servers`, on which the zone file is hosted.
+- These Name Servers are accessible from the public internet and VPCs using Route53 resolver.
+- The zone file is hosted on these Name Servers
+
+Accessing from VPC
+
+- The public hosted zone is accessible from within the VPC using the Route53 resolver, if the DNS is enabled for that VPC.
+- Route53 resolver is on the VPC IP Address (+2)
+- VPC instances are already configured (if enabled) with VPC + 2 address as their DNS resolver
+- This allows querying of Route53 public or any internet hosted DNS zones
+
+Accessing from public DNS
+
+- Client request to access a domain is **received by the DNS resolver of the ISP**
+- **DNS resolver of the ISP queries Root Name Servers**, which return the information about the TLD Name Server for that domain
+- DNS resolver using this information **queries the TLD Name Server of the domain**. TLD Name Server records in the TLD point to Name Server, which returns the information about the Authoritative Name Server for that domain.
+- **Since the website's Name Server are in Route53 Public Hosted zone**, these are the Authoritative Name Server for the website.
+
+Private Hosted Zone: Its similar to Public Hosted Zone but associated with VPCs and accessible in those VPCs. And it is inaccessible from public internet. Resource records can be created in the Private Hosted Zone, which are resolvable within the VPCs.
+
+- This could be used to run interneal application, dns names resolvable only within network.
+- To be able to access the privates hosted zone, the service needs to be running from within the VPC. And the VPC needs to associated with the private hosted zone.
+
+Split-View/Spit-Horizon DNS
+
+- This allows setting up same website address to behave differently when accessed from outside network or from within own network.
+- Split-View allows us to have a Public Hosted Zone sharing subset of records of the Private Hosted Zone.
+- Accessible records kept in public hosted zone.
+- Private records kept in private hosted zone.
+
+Route53 CNAME record: CNAME maps a NAME to another NAME.
+
+- Many AWS Services like ELB use a DNS name instead of an IP address.
+- Using CNAME for naked/apex like `netflix.com` here wouldn't be supported
+- Using CNAME for normal DNS record like `www.netflix.com` is supported
+
+Route53 ALIAS record: ALIAS records maps a NAME to an AWS Resource.
+
+- ALIAS record is **outside DNS standard** and is only implemented within AWS. So alias record can only be used if Route53 is hosting the domain.
+- ALIAS needs to match the record type to the type of the record you are pointing to. If the AWS resource provides an A record, then we need to use **A record ALIAS**. If the AWS resource provides an CNAME record, then we need to use **CNAME record ALIAS**.
+
+Health check is seperate from, but used by records within Route53. Health checkers are located globally. Health check can be done on AWS targets as well resources over the internet.
+
+- Checks run every 30 seconds
+- Check interval can be reduced to 10 seconds for additonal cost
+- **TCP Check**: It can be a TCP check where `the connection needs to be established within 10 seconds`
+- **HTTP(S) check**: It can be HTTP check where the `TCP connected must be established within 4 seconds` and it should return a response in 2xx or 3xx range.
+- **HTTP(S) check with string matching**: Along with the HTTP check the health checker expects a response within 2 second with response body containing an exact string match (in the first 5120 bytes). `This is the most accurate health check`.
+
+Simple routing: doesnt support `health checks`. All values are returned for a record when queried. It simply chooses one and to connect to.
+
+Failover Routing: If the primary record fails its health check, the secondary value of the same name is returned. Secondary value could be pointing to out of band pages from S3.
+
+Multi Value Routing: This is used over Failover Routing when you have multiple resources that can serve the request
+
+- You can specify multiple values for almost any record, but multivalue answer routing also lets you check the health of each resource, so Route 53 returns only values for healthy resources
+- This routing type is used to increase availability
+- It is not a replacement for Load Balancer
+
+Weighted Routing: lets you associate multiple resources with a single domain name and choose how much traffic is routed to each resource. If this is combined with health check unhealthy records are skipped. This can be useful for a variety of purposes:
+
+- simple load balancing and
+- testing new versions of software
+
+Latency Routing: If your application is hosted in multiple AWS Regions, you can improve performance for your users by serving their requests from the AWS Region that provides the lowest latency. If this is combined with health check it checks if the region provides lowest latency as well as if its healthy.
+
+Geolocation Routing: lets you choose the resources that serve your traffic based on the geographic location of your users, meaning the location that DNS queries originate from.
+
+- Records are tagged with location that can be a "country", "continent" or "default"
+- In US records can additionally be tagged by "state"
+
+Geoproximity Routing: Rather than using the actual physical distance, you can also optionally choose to route more traffic or less to a given resource by specifying a value, known as a bias. A bias expands or shrinks the size of the geographic region from which traffic is routed to a resource.
+
 # API Gateway
 
 API gateway support a range of authentication methods.
@@ -530,7 +621,77 @@ With SNI a server hosting multiple domain (at a single IP address where each use
 - Older browsers don't support SNI. Cloudfront allows us to use dedicated IP's for each custom domain in such cases (at an extra cost. $600 monthly).
 - Each custom domain requires a different cert to prove its identity
 
-Origin Access Identity (OAI): You can configure an S3 bucket as the origin of a CloudFront distribution. OAI prevents users from viewing your S3 files by simply using the direct URL for the file. Instead, they would need to access it through a CloudFront URL.
+The main ways to secure origins from direct access (bypassing CloudFront)
+
+- Origin Access identities (OAI) - for S3 Origins
+- Custom Headers - For Custom Origins
+- IP Based FW Blocks - For Custom Origins (Allowing access to only Cloudfront IP range)
+
+Origin Access Identity (OAI): You can configure an S3 bucket as the origin of a CloudFront distribution. OAI prevents users from viewing your S3 files by simply using the direct URL for the file. Instead, they would need to access it through a CloudFront URL. It uses same protocol (HTTP/HTTPS) used on Viewer Side (User to Cloudfront) on Origin Side as well (Cloudfront to User). It allows to pass custom header (Used to restrict access to only when this header is passed).
+
+Cloudfront with Custom Origin: provides option to choose Origin Side protocol either as HTTP, HTTPS or same as Viewer Side protocol. It allows to pass custom header (Used to restrict access to only when this header is passed).
+
+Any content distributed via Cloudfront is PUBLIC by default. Content that is PRIVATE needs to accessed via Signed URL or Signed Cookies. A single Cloudfront distribution behaviour is either PUBLIC or PRIVATE.
+
+- A Cloudfront Key is created by the AWS Account `Root User`.
+- Once a key exists in an account, that account can be added as a `TRUSTED SIGNER` in Cloudfront
+- After a `TRUSTED SIGNER` is added to a Cloudfront distribution, that distribution becomes a PRIVATE distribution
+- An application running on a compute service is required to generate Signed URL or Signed Cookies in this setup
+
+Signed URL and Signed Cookies: Signed URL provides access to an single object, while Signed Cookies can provide access to multiple objects.
+
+- Use a Signed URL if the client that you are using doesnt support Signed Cookies
+- Legacy RTMP distributions cannot use Signed Cookies.
+
+Private Distributions: Here every request received on Cloudfront is forwarded to API Gateway which forwards it to a Lambda function. _Direct access to origin (S3) is blocked here_. We can have one private distribution for sensitive content and another public one which is open to all.
+
+- The Lambda examines if the request is for private or public content
+- If the application and user accessing the content is validated, a signed cookie is retured to the application
+
+There are two types of geography based restrictions:
+
+- Cloudfront Geo Restriction
+- Third-party Geo Location
+
+CloudFront Geo Restriction: allows for White or Black list restrictions based on ONLY Country Code.
+
+- It works using a GeoIP database that claims 99.8% plus accuracy
+- `Applies to the entire distribution` to restrict a request only based on geographic location
+
+Third-party Geo Location: requires a compute instance, additionally **cloudfront distribution is private** so any direct access to edge location will return a 403.
+
+- the generation of signed URLs or Cookies is controlled by the compute instance [How?]
+- but can restrict based on almost anything (licensing, user login status, user profile fields and much more)
+
+CloudFront Field Level Encryption: HTTPS makes sure that any data being sent over the network is encrypted. But once the data reaches the origin, the data which can contain sensitive data is in unencrypted form and will be stored in the same manner.CloudFront Field Level Encryption allows the use of public key at the Edge Location, so that even after the sensitive data reaches origin, it is encrypted.
+
+- It can then be decrypted only using the private key
+
+Lambda@Edge: allows cloudfront to run lambda function at CloudFront edge locations to modify traffic between the viewer and edge location and edge locations and origins.
+
+AWS Certificate Manager (ACM): a service that lets you easily provision, manage, and deploy **public and private (SSL/TLS) certificates** for use with AWS services and your internal connected resources
+
+- ACM lets you run a public or private certificate authority (CA)
+- Private CA: Appliation needs to trust your private CA
+- Public CA: Browsers trust a list of providers, which trust other providers
+
+ACM can generate or import certificate
+
+- If its generated, it can be automatically renewed
+- If it imported, it needs to manually renewed
+
+Certificates can only be deployed to supported AWS services
+
+- It can be ELBs or Cloudfront
+- EC2 is not supported (because a root user will have access to those certificates and they can be misused)
+
+ACM is regional service
+
+- Certificates can only be used in the region they were imported or generated in
+- Certificates cannot leave the region they were imported or generated in
+- An ELB in `ap-southeast-2` needs to use a certificate from ACM in `ap-southeast-2` only
+- Cloudfront is an `EXCEPTOIN`. It runs only from `us-east-1`.
+- Certificate generated in any other region cannot be used with Cloudfront
 
 If you’re using the domain name that CloudFront assigned to your distribution, such as dtut0ria1sd0jo.cloudfront.net, you can change the **Viewer Protocol Policy setting** for one or more cache behaviors to **require HTTPS communication** by setting it as either Redirect HTTP to HTTPS, or HTTPS Only.
 

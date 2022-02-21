@@ -73,7 +73,7 @@ To associate a Private Hosted Zone with a VPC where VPC belongs to:
 
 Resource records can be created in the Private Hosted Zone, which are resolvable within the VPCs.
 
-    Create public hosted zone when you want access to resource records from VPC but not from public internet.
+    Create private hosted zone when you want access to resource records from VPC but not from public internet.
 
 ### Considerations
 
@@ -92,9 +92,9 @@ This allows setting up same website address to behave differently when accessed 
 
 Consider the following example where the VPC1 is running an Amazon Workspace. This VPC is associated with the private hosted zone, so all the resource records are accessible.
 
-Split-View allows us to create a Public Hosted Zone, sharing subset of records ot the Private Hosted Zone.
+Split-View allows us to have a Public Hosted Zone sharing subset of records of the Private Hosted Zone.
 
-- So, those records not present in private hosted one are not accessible from the internet.
+- So, those records not present in public hosted one are not accessible from the internet.
 
 ![img](./imgs/route53/R53SplitView.webp)
 
@@ -124,7 +124,7 @@ ALIAS records can be used for both naked/apex and normal records.
 - There is no charge for using ALIAS to point to AWS Resource.
 - Use this as the default for doing AWS resource mapping.
 
-  CNAME can be used to map NAME to an AWS resource for non nakes/apex record.
+CNAME can be used to map NAME to an AWS resource for non naked/apex record.
 
 ALIAS is actually a subtype.
 
