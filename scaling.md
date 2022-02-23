@@ -16,7 +16,7 @@ v2 load balancers are faster and `support target groups and rules`.
 
 ## Classic Load Balancer
 
-Introduced in 2009. Is not replaced by v2 ELB which is recommended at the moment.
+Introduced in 2009. Is now replaced by v2 ELB which is recommended at the moment.
 
 - Classic Load Balancer can load balance between HTTP, HTTPS and other lower level protocols
 - Classic Load Balancer is not really layer 7 supporting. It lacks many feature.
@@ -138,7 +138,7 @@ With `Cross-Zone Load Balancing` an ELB node can be distribute load across any o
 
 ---
 
-# Load balancing (ALB) vs Network Load Balancing (NLB)
+# Application Load balancing (ALB) vs Network Load Balancing (NLB)
 
 ## Comparing Classic LB with v2 LB
 

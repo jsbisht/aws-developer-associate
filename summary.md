@@ -61,9 +61,13 @@ The consolidated billing feature in **AWS Organizations** allows you to consolid
 
 To avoid security issues, it is of utmost importance to test the impact of service control policies (SCPs) on your IAM policies and resource policies before applying them. The **IAM policy simulator** evaluates the policies that you choose and determines the effective permissions for each of the actions that you specify.
 
-Your sign-in page URL has the following format, by default: https://Your_AWS_Account_ID.signin.aws.amazon.com/console/
+Your sign-in page URL has the following format, by default:
 
-If you create an AWS account alias for your AWS account ID, your sign-in page URL looks like the following example: https://Your_Alias.signin.aws.amazon.com/console/
+> https://Your_AWS_Account_ID.signin.aws.amazon.com/console/
+
+If you create an AWS account alias for your AWS account ID, your sign-in page URL looks like the following example:
+
+> https://Your_Alias.signin.aws.amazon.com/console/
 
 > iam create-account-alias --account-alias finance-dept
 
@@ -90,10 +94,22 @@ You can also use a combination of ELB and Auto Scaling to maximize the elasticit
 
 # VPC
 
-- 1 subnet can only be part of 1 AZ
-- 1 VPC can contain multiple AZ.
-- By default subnet within a VPC can communicate with other subnets in the same VPC
 - Regions can only have 1 default VPC and many custom VPCs
+- 1 VPC can contain multiple AZ.
+- 1 subnet can only be part of 1 AZ
+- By default subnet within a VPC can communicate with other subnets in the same VPC
+
+```
+       |----- VPC ----|-----    AZ
+       |              |
+Region |----- VPC     |-----    AZ
+       |              |
+       |----- VPC     |-----    AZ  |----- Subnet
+                                    |
+                                    |----- Subnet
+                                    |
+                                    |----- Subnet
+```
 
 Subnet: Consider a subnet say **10.16.16.0/20**
 
@@ -341,6 +357,115 @@ x-amz-server-side-encryption header can only accept two values: AES256 and aws:k
 
 - header should be AES256, which means that the bucket is using Amazon S3-Managed Keys (SSE-S3).
 - if this header has a value of aws:kms, then it uses AWS KMS-Managed Keys (SSE-KMS).
+
+# Elastic Load Balancer (ELB)
+
+There are 3 types of ELB available within AWS:
+
+- v1 (Classic Load Balancer - Not Recommended)
+- v2 (Application Load Balancer - Recommended)
+- v2 (Network Load Balancer - Recommended)
+
+v2 load balancers are faster and `they support target groups and rules`.
+
+Classic Load Balancer: Introduced in 2009. Is now replaced by v2 ELB which is recommended at the moment.
+
+- Classic Load Balancer can load balance between HTTP, HTTPS and other lower level protocols
+- Classic Load Balancer is not really layer 7 supporting. It lacks many feature.
+- One limitation of Classic Load Balancer is that it only support 1 SSL certificate per load balancer
+
+Application Load Balancer: Supports layer 7 features. Such as HTTP, HTTPS, WebSocket.
+
+Network Load Balancer: Supports TCP, TLS (Secure form of TCP protocol), UDP. In general, this would be used for any application not using HTTP/HTTPS.
+
+Its the job of the load balancer to accept connections from the customer.
+
+- It then distributes these jobs to registered backend compute
+- So the infrastructure can scale up or scale down without affecting the customer
+- So even if the infrastructure fail and is repaired, user wouldnt be directly affected
+
+Each ELB is configured with an A record DNS name, which resolves to the ELB nodes. The DNS name resolves to all of the individual nodes.
+
+```
+                A record
+               |----------    ELB Node
+               |A record
+ELB (DNS Name) |----------    ELB Node
+               |A record
+               |----------    ELB Node
+```
+
+The type of ELB node controls the IP addressing of the ELB nodes: Internet Facing (given public and private addresses) and Internal Only (only private addresses).
+
+ELB nodes are **configured with listeners** which **accept traffic on a port and protocol** and **communicate with targets on a port and protocol**.
+
+Once a connection is made to the `Internet Facing ELB node`, it then makes a connection to the instances be it public or private instances.
+
+Architecture recommendation:
+
+- What we can do is that we can add ELB's between the layers (tiers), to abstract one tier from another.
+- In this case the user will connect directly to the ELB, which will connect to an application instance.
+- The web instance will connect to the app instance through an internal ELB. This would abstract away the direct connection between instances of these tiers.
+- ELB's allow each tier to scale independently.
+- If load on app tier increases, it can scale without affecting any other tier
+
+Note that we use at least one ELB node per AZ. So the user will connect to the DNS name of the application which points to the DNS name of the ELB DNS name (Is routing done by Route53?).
+
+Cross-Zone Load Balancing: Historically LB nodes could only distribute load within the AZ they are in. With **Cross-Zone Load Balancing** an ELB node can be distribute load across any of the instance in any AZ. This is now enabled by default for an application load balancer.
+
+Application Load balancing (ALB)
+
+- Layer 7 load balancer
+- Listens on HTTP and/or HTTPS
+- It cant understand any other Layer 7 protocol (SMTP, SSH, Custom Gaming protocol, etc)
+- It **cannot** be configured to directly listen to TCP/UDP/TLS Listeners
+- It can perform application health check
+- HTTP or HTTPS (SSL/TLS) are always terminated on the ALB. A new connection is made from ALB to the origin
+- ALBs are slower than NLB since more levels of network stack to be processed
+
+ALB Rules: ALB have concept of rules, which direct connections that arrive at a listener.
+
+- Rules are processed in priority order.
+- Default rule acts as a catchall rule.
+
+Rules can have **conditions** which can be used to check:
+
+- host-header
+- http-header
+- http-request-method
+- path-pattern
+- query-string
+- source-ip
+
+Rules can have **actions** which can be:
+
+- forward (forward traffic to a target group)
+- redirect (can redirect traffic to another domain name)
+- fixed-response (respond with a certain success or error code)
+- authenticate-oidc (authenticate using open ID)
+- authenticate-cognito (authenticate using cognito)
+
+Network Load Balancing (NLB)
+
+- Layer 4 load balancer
+- Can work with TCP, TLS, UDP and TCP_UDP (TCP with UDP)
+- Doesnt have any understand of HTTP and HTTPS
+- They cant see headers, or cookies, or understand session
+- Are very very fast (millions of rps, 25% of ALB latency)
+- Ideal for apps that use SMTP, SSH, Custom Game protocols, financial apps not using HTTPS
+- Health check with NLB checks only ICMP/TCP handshake
+- NLB's can have static IPs, so can be whitelisted (!important)
+- Can Forward TCP to instances, which mean unbroken encryption between client and origin
+
+Use Network Load Balancer if:
+
+- your application requires unbroken encryption
+- static IP for whitelisting
+- the fastest performance (million rps, 4 times of ALB)
+- the protocol is not HTTP or HTTPS
+- privatelink
+
+Else choose Application Load Balancer
 
 # Route 53
 
