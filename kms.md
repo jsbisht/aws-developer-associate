@@ -2,7 +2,7 @@
 
 - Regional and a Public Service.
 - Each region is isolated when using KMS.
-- It's a publich service and occupies AWS public zone.
+- It's a public service and occupies AWS public zone.
 - It can be connected to by anything with permission in the public zone.
 
 Create, store, and manage keys.
@@ -190,7 +190,6 @@ So even if someone gained access to encrypted DEK and encrypted object, they wil
 Using the GenerateDataKey operation will indicate KMS which CMK to be used, which will be used to generate Data Encryption Key.
 
 - Data Encryption Key can be used to overcome the 4KB limit over data to be encrypted
-- DEK can be linked to a specific CMK that was used to create the DEK
 
 When a DEK is generated, KMS returns the key in two forms:
 
