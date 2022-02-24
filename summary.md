@@ -1698,7 +1698,63 @@ Dead Letter Queue (DLQ): If a message is processed multiple times but is not bei
 - Enqueue timestamp is used to indicate when the message was first added to source queue
 - The expiration of a message is always based on its original enqueue timestamp. When a message is moved to a dead-letter queue, the enqueue timestamp is unchanged.
 
+SQS vs SNS
+
+SQS is distributed queuing system. Messages are not pushed to receivers. Receivers have to poll SQS to receive messages. Messages can be stored in SQS for short duration of time.
+
+SNS is a distributed publish-subscribe system. **Messages are pushed to subscribers as and when they are sent by publishers to SNS**.
+
+In SQS the message delivery is guaranteed but in SNS it is not.
+
+**Message consumption**
+
+- SQS : Pull Mechanism — Consumers poll messages from SQS.
+- SNS : Push Mechanism — SNS pushes messages to consumers.
+
+**Persistence**
+
+- SQS : Messages are persisted for some duration is no consumer available. The retention period value is from 1 minute to 14 days. The default is 4 days.
+- SNS : No persistence. Whichever consumer is present at the time of message arrival, get the message and the message is deleted. If no consumers available then the message is lost.
+
+**Consumer Type**
+
+- SQS : All the consumers are supposed to be identical and hence process the messages in exact same way.
+- SNS : All the consumers are (supposed to be) processing the messages in different ways.
+
 # Kinesis
+
+Kinesis Data Stream: This is a scalable streaming service. It is designed to inject data from lots of devices or lots of applications. Kinesis streams is a **realtime service (~200 ms)**.
+
+Streams store a **24-hour moving window of data**. **Can be increased to 7 days**. Data that is 24 hours and a second more is replaced by new data entering the stream.
+
+Kinesis includes the storage within it for the amount of data that can be ingested during a 24 hour period. However much you ingest during 24 hours, that's included.
+
+Multiple consumers can access data from that moving window.
+
+- One might look at data points once per hour
+- Another looks at data in real time.
+
+Kinesis Data Firehose: allows the **long term persistent storage** of kinesis data onto services _like_ S3 ahd provides **near realtime delivery** (~60 seconds).
+
+- Data from producers into Kinesis Data Stream can be integrated into Kinesis Data Firehose.
+- If you arent using any feature of Kinesis Data Stream, you can send the data directly into Kinesis Data Firehose.
+- The data can be sent to `Lambda for transformation` as well as `source records` can be sent to S3 for storage.
+- Transformed records can be sent to **HTTP, Splunk, Elastic Search or a Destination Bucket**.
+
+SQS vs Kinesis: Kinesis is desiged for huge scale ingestion with multiple consumers. Rolling window for multiple consumers is offered by Kinesis, not by SQS. SQS is not built for persistence. Once message is processed, it is deleted.
+
+Kinesis Analytics Application: uses SQL using Source Stream data with Reference Data as input and produces output stream data. The data from Source Stream can use reference data from S3 bucket. The output stream data can be sent to either Kinesis Data Stream (remains realtime data) or Kinesis Data Firehose (becomes near realtime data).
+
+Can deliver data to firehose indirectly any destination which firehose support, but the data becomes near realtime.
+
+- S3
+- Redshift
+- ElasticSearch
+- Splunk
+
+It also supports AWS Lambda and Kinesis Data Streams as a destination and the data remains realtime.
+
+- Can perform transformation of data as it passes through using Lambda
 
 Kinesis Client Library
 
@@ -2359,6 +2415,15 @@ AWS AppSync is quite similar with Amazon Cognito Sync which is also a service fo
 ![img](https://d1.awsstatic.com/AppSync/product-page-diagram_AppSync@2x.d46d96d1e27169aa5005223299068da899280538.png)
 
 # StepFunctions
+
+Step functions is a product which lets you build long running serverless workflow based applications within AWS which integrate with many AWS services. **If time between execution steps is longer than 15 minutes, we use Step Functions**.
+
+Maximum duration for state machine execution is 1 year. (Eg. online order followed by manual fulfillment of the order will drive the state machine in a long running fashion)
+
+Two types of workflows:
+
+- Standard workflow (standard is the default and has a 1 year workflow)
+- Express workflow (for IOT and highly transactional such as IoT and can run for 5 mintues)
 
 SWF is incorrect because this is just a fully-managed state tracker and task coordinator service. It **does not provide serverless orchestration** to multiple AWS resources. Use step functions instead.
 

@@ -260,8 +260,7 @@ In SQS the message delivery is guaranteed but in SNS it is not.
 
 # Step Functions
 
-There are many problems with lambdas limitations that can be solved with
-a state machine.
+There are many problems with lambdas limitations that can be solved with a state machine.
 
     If time between execution steps is longer than 15 minutes, we use Step Functions
 
@@ -395,7 +394,7 @@ Firehose offers near realtime delivery
 
 ## Kinesis Data Analytics
 
-Kinesis Data Analytics capable of operating in realtime on high throughput streaming data.
+Kinesis Data Analytics is capable of operating in realtime on high throughput streaming data.
 
 - The real time processing is done using SQL
 - Ingests from Kinesis Data Streams or Firehose
