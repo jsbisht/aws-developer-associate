@@ -2010,9 +2010,120 @@ Resources:
 
 The **CodeUri** parameter is incorrect because this is not a valid property of **AWS::Lambda::Function** resource but of the **AWS::Serverless::Function** resource in _AWS SAM_. This parameter accepts the S3 URL of your code and not the actual code itself.
 
+# CodePipeline
+
+There are three configuration options for manual approval actions in CodePipeline:
+
+- Publish Approval Notifications: You can configure an approval action to publish a message to an Amazon Simple Notification Service topic when the pipeline stops at the action.
+- Specify a URL for Review: The URL is included in the notification that is published to the Amazon SNS topic. Approvers can use the console or CLI to view it.
+- Enter Comments for Approvers: you can also add comments that are displayed to those who receive the notifications or those who view the action in the console or CLI response.
+
+No Configuration Options
+
+- You can also choose not to configure any of these three options. You might not need them if, for example, you can notify someone directly that the action is ready for their review, or you simply want the pipeline to stop until you decide to approve the action yourself.
+
+# CodeCommit
+
+CodeCommit Notification: We can set events that trigger notifications like Comments, Approvals, Pull request, Branches and Tags. Notification for these events can be sent to
+
+- `SNS Topic` or
+- `AWS Chatbot (Slack)`.
+
+CodeCommit Trigger: Just like notification, trigger occurs when something happens on the repo. But it can be sent to:
+
+- `Amazon SNS` or
+- Invoke `AWS Lambda`
+
+Authentication is either using **HTTPS Git credentials or SSH key**.
+
+Authorisation is using the **IAM identity policies**, to control what actions are allowed by a user for a certain repo or within CodeCommit.
+
+# CodeBuild
+
+CodeBuild compiles your source code, runs unit tests, and produces artifacts that are ready to deploy. Uses `buildspec.yml` file. Should be at the root of the source.
+
+In this we specify the build phases and then the list of artifacts.
+
+It consists of following phases:
+
+- install (`use this only for core packages, not for dependencies`)
+- pre_build (`sign-in or install dependencies`)
+- build (`run commands used to build the application`)
+- post_build (`package artifacts, push docker image, notifications, etc`)
+
+The **artifacts** section is used to define output location and how it's uploaded to the S3 output bucket. You can also define environment variables - shell, variables, parameter-store, secrets-manager.
+
+CodeBuild publishes events to CloudWatch so that we can hook onto different state of the build.
+
+Events can be sent to EventBridge.
+
 # CodeDeploy
 
-The content in the 'hooks' section of the AppSpec file varies, depending on the compute platform for your deployment. The 'hooks' section for an EC2/On-Premises deployment contains mappings that link deployment lifecycle event hooks to one or more scripts. The 'hooks' section for a Lambda or an Amazon ECS deployment specifies Lambda validation functions to run during a deployment lifecycle event.
+For using CodeDeploy on-premises or EC2, we need to use `CodeDeploy agent`.
+
+The CodeDeploy agent is not required for deployments that target the `serverless lambda servers`.
+
+CodeDeploy uses `appspec.yml` or `appspec.json` file.
+
+- This file is used to define `configuration` and `lifecycle event hooks`.
+- If you are deploying lambda function to the lambda servers, you can use JSON or YAML file.
+- If you are deploying to an EC2 instance or on-prem server, then you must use YAML only.
+
+Configuration section of this file contains:
+
+- files
+- resources
+- permissions
+
+Files section
+
+This indicates which files from your application revision should be installed on the instance during the deployment's **Install** event.
+
+- `applies to EC2 and on-premise`
+
+```yaml
+files:
+  - source: source-file-location-1
+    destination: destination-file-location-1
+file_exists_behavior: DISALLOW|OVERWRITE|RETAIN
+```
+
+Resources section (applies to ECS and Lambda)
+
+- For ECS: contains your Amazon ECS task definition, container and port for routing traffic to your updated Amazon ECS task set, and other optional information.
+
+```yaml
+Resources:
+  - TargetService:
+      Type: AWS::ECS::Service
+      Properties:
+        TaskDefinition: "task-definition-ARN"
+```
+
+- For Lambda: contains the name, alias, current version, and target version of a Lambda function.
+
+```yaml
+resources:
+  - name-of-function-to-deploy:
+      type: "AWS::Lambda::Function"
+```
+
+Permission section: used to define permission on the files defined under the files section and applies to EC2 and on-premise.
+
+Hooks section
+
+- For an EC2/On-Premises deployment: contains mappings that link deployment **lifecycle event hooks to one or more scripts**.
+- For a Lambda or an Amazon ECS deployment: specifies Lambda **validation functions to run during a deployment lifecycle event**.
+
+Following is the list of hooks your scripts or lambda's can run in:
+
+- ApplicationStop
+- DownloadBundle
+- BeforeInstall
+- Install
+- AfterInstall
+- ApplicationStart
+- ValidateService (This is where we validate if the deployment was successful or not)
 
 Lifecycle Events
 
@@ -2033,17 +2144,32 @@ If you choose **Canary10Percent10Minutes** then 10 percent of your customer traf
 
 CodeDeploy agent needs to be installed on EC2 instances while its not required while using CodeDeploy with ECS or Lambda.
 
-# CodePipeline
+Scenario - Health Check: You have set up a deployment group with 10 instances in AWS CodeDeploy, and your minimum healthy instances is at 9. In this scenario, what will AWS CodeDeploy do?
 
-There are three configuration options for manual approval actions in CodePipeline:
+- It deploys the revision to one instance at a time.
+- If any of these deployments fail, AWS CodeDeploy immediately fails the overall deployment.
 
-- Publish Approval Notifications: You can configure an approval action to publish a message to an Amazon Simple Notification Service topic when the pipeline stops at the action.
-- Specify a URL for Review: The URL is included in the notification that is published to the Amazon SNS topic. Approvers can use the console or CLI to view it.
-- Enter Comments for Approvers: you can also add comments that are displayed to those who receive the notifications or those who view the action in the console or CLI response.
+If you had set up a deployment group with 10 EC2 instances in AWS CodeDeploy, and your minimum healthy instances parameter is at 8.
 
-No Configuration Options
+- It deploys the revision to two instances at a time.
+- If the revision deployment fails, AWS CodeDeploy immediately fails the overall deployment.
 
-- You can also choose not to configure any of these three options. You might not need them if, for example, you can notify someone directly that the action is ready for their review, or you simply want the pipeline to stop until you decide to approve the action yourself.
+Scenario - File Conflict: If your AWS CodeDeploy configuration includes creation of a file, nginx.conf, but the file already exists on the server (prior to the use of AWS CodeDeploy), what is the default behavior that will occur during deployment?
+
+- The deployment will fail
+- CodeDeploy will not remove files that it does not manage. This is maintained as a list of files on the instance.
+
+Deletion of custom deployment configuration: What will happen if you delete an unused, custom deployment configuration in AWS CodeDeploy?
+
+- You cannot delete a custom deployment configuration that is still in use.
+- You will no longer be able to associate the deleted deployment configuration with new deployments and new deployment groups. `This action cannot be undone`.
+
+Deleting an application with AWS CodeDeploy: removes information about the application from the AWS CodeDeploy system, including all related deployment group information and all related deployment details.
+
+- It does not remove any related application revisions from instances on which the revisions may be installed
+- nor does it delete revisions from Amazon S3 buckets where the revisions may be stored.
+- It also does not terminate any Amazon EC2 instances or deregister any on-premises instances.
+- This action cannot be undone.
 
 # X-Ray
 
