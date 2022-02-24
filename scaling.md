@@ -473,7 +473,7 @@ Lifecycle hooks can also be integrated to
 
 ### Workflow
 
-During Scale Out, the lifecycle hooks `PENDING: Wait` and `PENDING: Proceed` allows to perform custom actions.
+During Scale Out, the lifecycle hooks `Pending: Wait` and `Pending: Proceed` allows to perform custom actions.
 
 Similarly during Scale In, the lifecycle hook `Terminating: Wait` and `Terminating: Proceed` allows to perform custom actions.
 

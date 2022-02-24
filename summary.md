@@ -423,6 +423,30 @@ Application Load balancing (ALB)
 - HTTP or HTTPS (SSL/TLS) are always terminated on the ALB. A new connection is made from ALB to the origin
 - ALBs are slower than NLB since more levels of network stack to be processed
 
+```
+Domain Name -> ELB DNS -> ELB Node
+                            |
+                            |
+                            V
+                          Rule
+                            |
+                            |
+                            V
+                    condition, action
+                            |
+                            |
+                            V
+                        target group
+                            |
+                            |
+                            V
+                    Auto Scaling Group
+                            |
+                            |
+                            V
+                        instance
+```
+
 ALB Rules: ALB have concept of rules, which direct connections that arrive at a listener.
 
 - Rules are processed in priority order.
@@ -466,6 +490,75 @@ Use Network Load Balancer if:
 - privatelink
 
 Else choose Application Load Balancer
+
+Launch Configuration and Templates: LC and LT lets you define anything that you define while launching a EC2 instance such as
+
+- AMI, Instance Type, Storage, Key Pair
+- Networking and Security Groups
+- Userdata and IAM Role
+- **used with Auto Scaling Groups**
+
+Why not use CloudFormation instead?
+
+Launch templates is newer and recommended to use over Launch Configuration, they include the latest features and improvements. Launch templates supports versioning of templates, unlike Launch Configuration.
+
+- If you **launching instance using LT**, you need to specify the subnet to be used.
+- If you are **using ASG with LT**, ASG will choose the subnet automatically.
+
+Auto Scaling Groups (ASG): Role of an ASG is to keep the number of instances at Desired capacity by provisioning or terminating instances. ASG is used with ELB and Launch Templates to deliver elatic architectures. Key properties defined for an ASG are Minimum, Desired, Maximum.
+
+1. Manual Scaling - Manually adjust the desired capacity.
+2. Scheduled Scaling - Based on schedule. Eg. sales, off hours.
+3. Dynamic Scaling
+   - Simple Scaling can be used to automate scaling based on metrics such as:
+     - CPU Load
+     - Memory
+   - Stepped Scaling can be used to add or remove incrementally
+   - Target Tracking can be used to scale using aggregate CPU, network, `request count per target`, etc
+4. Cooldown Periods is used to wait between scaling actions (Since there is minimum billing period after an instance is provisioned, regardless how long it was used)
+
+If you have a LT or LC which can provision an EC2 instance, use it to provision an ASG. Set the ASG to use multiple subnets in multiple AZs. Set the ASG to use minimum, desired and maximum as 1 instance. You get a **simple instance recovery**. Since ASG work across AZs, on failure of EC2, another one can be provisioned in another AZ.
+
+ASG Health Checks
+
+- EC2 (default)
+- ELB (Can be enabled on ASG)
+- Custom
+
+EC2 health check: considers the following status as UNHEALTHY (anything other than RUNNING state): Stopping, Stopped, Terminated, Shutting Down or Impaired (not passing 2/2 checks).
+
+ELB health check: instance is considered HEALTHY, if its in RUNNING state and if it passes ELB health check (like pattern matching, etc). With ELB health check integerated with ASG, the **checks are more application aware (Layer 7)** unlike EC2 health check.
+
+Custom health check integrates with external system to mark instances are healthy or unhealthy.
+
+Health check grace period: time between starting an instance and performing health checks. This allows system to launch, perform bootstrapping and let application start before health check is peformed. If you dont have Health check grace period long enough the **application might start peforming health check before the application is started**.
+
+ASG with Load Balancer: Instead of statically adding instances to the target group, we can use an ASG integrated with the target group. They are automatically added or removed in the target group of the ELB.
+
+For Amazon EC2 Auto Scaling, there are two primary process types: Launch and Terminate. The **Launch** process adds a new Amazon EC2 instance to an Auto Scaling group, increasing its capacity. The **Terminate** process removes an Amazon EC2 instance from the group, decreasing its capacity.
+
+ASG Considerations
+
+- ASG defines WHEN are WHERE
+- LT defines WHAT configuration instances are created with
+- Autoscaling Groups are free, only resources created are billed
+- Use cooldowns to avoid rapid scaling
+- Use smaller instances to save cost
+- Use ASG with ALB's to abstract away instance dependency
+
+Lifecycle hooks: You can define `custom actions during ASG actions` like instance launch or terminate transitions.
+
+Lifecycle hooks enable you to `perform custom actions by pausing instances` as an Auto Scaling group launches or terminates them.
+
+When an instance is paused, it remains in a wait state either until you complete the lifecycle action using the
+
+- `complete-lifecycle-action command` or
+- `CompleteLifecycleAction operation` or
+- `until the timeout period ends` (one hour by default).
+
+During Scale Out, the lifecycle hooks `Pending: Wait` and `Pending: Proceed` allows to perform custom actions.
+
+Similarly during Scale In, the lifecycle hook `Terminating: Wait` and `Terminating: Proceed` allows to perform custom actions.
 
 # Route 53
 
