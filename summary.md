@@ -1634,14 +1634,69 @@ Elastic Beanstalk recommends one of two methods for performing platform updates.
 
 Package your application as a **zip** file and deploy it using the **eb deploy** command.
 
+# SNS
+
+This is a public AWS service which needs access to the public AWS endpoint. This allows anyone from the public internet to access it. If a VPC is configured to access public AWS endpoints, it can connect to SNS as well.
+
+Messages are under 256KB in size. So messages are `not designed for large binary files`.
+
+SNS topics are the base entity of SNS.
+
+- SNS permission are defined on the SNS topic
+- SNS configurations are defined on the SNS topic
+
 # SQS
 
-- ReceiveMessageWaitTimeSeconds
-- [SQS short and long polling](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-short-and-long-polling.html)
+SQS is a public, fully managed, highly-available queues. Replication happens within a region by default.
+
+- Messages can live on SQS Queue for up to 15 days. They offer `KMS encryption at rest`.
+- Access is based on `identity policies` or a `queue policy`.
+
+visibility timeout: the amount of time that a client can wait to work on the messages.
+
+- If a client recieves messages on the queue and finishes on that workload it can delete the message.
+- If the client doesn't delete the message, then it will reappear on the queue.
+- A different client can retry processing that message
+- Visibility defaults 30 seconds, can be between 0 to 12 hours `on the queue or per message`
+
+SQS Queue with ASG: **ASG Web Pool** scales based on High CPU. **ASG Worker Pool** scaled based on Queue Length.
+
+SQS Fanout with SNS: even though upload of video produces a single event (sent to SQS), we use SQS Fanout to send message to multiple SNS queues. Different ASG pool is used for each SNS queue (for each video resolution).
+
+Standard
+
+- multi-lane HW
+- doesnt guarantee the order
+- at least once delivery
+- near unlimited throughput
+
+FIFO
+
+- `need a .fifo suffix` to be a valid FIFO queue
+- single lane road with no way to overtake
+- guarantee the order
+- at exactly once delivery
+- throughput of 3,000 messages per second with batching or up to 300 messages second without
+
+Types of polling in SQS
+
+- short (immediate) : uses 1 request and can return 0 or more messages. If the queue is empty, it will return 0 and try again. This hurts queues that stay short
+
+- long (waitTimeSeconds) : it will wait for up to 20 seconds for messages to arrive on the queue. It will sit and wait if none currently exist.
 
 Amazon SQS FIFO queues follow exactly-once processing. It introduces a parameter called Message Deduplication ID, which is the token used for deduplication of sent messages. Add a MessageDeduplicationId parameter to the SendMessage API request. Ensure that the messages are sent at least 5 minutes apart.
 
 Specify the Amazon Resource Name of the SQS Queue in the Lambda function’s **DeadLetterConfig** parameter.
+
+SQS Extended Client Library: This is used to handle large payloads with SQS & S3. Specify whether messages are always stored in Amazon S3 or only when the size of a message exceeds 256 KB. This is especially useful for storing and consuming messages up to 2 GB.
+
+SQS Delay Queues: provides an initial period of invisibility for messages. Predefine periods can ensure that **processing of messages doesn't begin until this period has expired**. Message timers allow a **per-message** invisibility to be set, overriding any queue setting. Delay can be between **0 to 15 minutes**. During this period, ReceiveMessage will not retrive these messages. **FIFO queues are not supported**.
+
+Dead Letter Queue (DLQ): If a message is processed multiple times but is not being processed, it can be moved to Dead-letter queue.
+
+- If the retention period of DLQ is less than source queue, the message will be dropped and not added to DLQ
+- Enqueue timestamp is used to indicate when the message was first added to source queue
+- The expiration of a message is always based on its original enqueue timestamp. When a message is moved to a dead-letter queue, the enqueue timestamp is unchanged.
 
 # Kinesis
 
