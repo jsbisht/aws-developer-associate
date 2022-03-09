@@ -288,19 +288,19 @@ These kinds of policy can be used to create groups of users. Say, you create gro
 ## Using CMK to encrypt and decrypt data via CLI
 
 ```sh
-echo "find all the doggos, distract them with the yumz"     battleplans.txt
+echo "find all the doggos, distract them with the yumz" > battleplans.txt
 
 aws kms encrypt \
     --key-id alias/catrobot \
     --plaintext fileb://battleplans.txt \
     --output text \
     --query CiphertextBlob \
-    | base64 --decode     not_battleplans.enc
+    | base64 --decode not_battleplans.enc
 
 aws kms decrypt \
     --ciphertext-blob fileb://not_battleplans.enc \
     --output text \
-    --query Plaintext | base64 --decode     decryptedplans.txt
+    --query Plaintext | base64 --decode decryptedplans.txt
 ```
 
 ---
@@ -311,13 +311,16 @@ Buckets aren't encrypted, **objects are**. Each object can use a different encry
 
 ## Types of S3 Encryption
 
-- Client Side Encryption
-  - Objects are encrypted before they are sent to S3.
-  - Client decides the keys to be used, process to be followed for the encryption
-  - Doesnt use S3 for any part of the encryption. Just stores the encrypted objects post encryption on client side.
-- Server Side Encryption
-  - The objects arent initially encrypted, only when data is sent to S3 it is encrypted via HTTPS (encryption in transit)
-  - When the data hits the S3 endpoint, the object are encrypted.
+Client Side Encryption
+
+- Objects are encrypted before they are sent to S3.
+- Client decides the keys to be used, process to be followed for the encryption
+- Doesnt use S3 for any part of the encryption. Just stores the encrypted objects post encryption on client side.
+
+Server Side Encryption
+
+- The objects arent initially encrypted, only when data is sent to S3 it is encrypted via HTTPS (encryption in transit)
+- When the data hits the S3 endpoint, the object are encrypted.
 
 ```
 

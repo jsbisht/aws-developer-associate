@@ -331,7 +331,7 @@ CMK's are containers for the actual `physical` master key.
 
 CMK Alias: can be used to specify the CMK. So the underlying CMK can be changed. Just like CMK, aliases are regional too. Every alias in each region has its associated CMK different from other regions.
 
-On CreateKey: a CMK will be created in KMS. This key will be stored into KMS in an encrypted form.
+On CreateKey: a CMK will be created in KMS. This key (material) will be stored into KMS in an encrypted form.
 
 During Encrypt: we send the data to be encrypted. Also specifying the key to be used.
 
@@ -347,7 +347,7 @@ During Decrypt: we send the encrypted data to KMS
 
 CreateKey, Encrypt and Decrypt are individual operations and require their own permissions.
 
-Data Encryption Key (DEK): CMK will be used to create encrypted DEK. This process of encrypting one key with another is called **envelope encryption**. Now encrytped DEK and encrypted object is stored without the need of storing the plaintext DEK. DEK is used to encrypt your data outside of AWS KMS.
+Data Encryption Key (DEK): DEK is used to encrypt your data outside of AWS KMS. CMK will be used to create encrypted DEK. This process of encrypting one key with another is called **envelope encryption**. Now encrytped DEK and encrypted object is stored without the need of storing the plaintext DEK.
 
 - You pass the DEK back to KMS and you ask it to decrypt it using the CMK that was used to generate the DEK.
 
@@ -359,6 +359,129 @@ KMS does not store DEK in any form
 - Key is discarded as KMS doesn't perform encryption or decryption of data using DEK
 
 S3 uses DEK for every object that is encrypted in it.
+
+- It encrypts the object using plain text DEK and then only stores the encrypted version of DEK
+
+Key Policy is the starting point for security on AWS.
+
+- Its a `resource policy`, similar to bucket policy on S3 bucket, but on a key
+- Every CMK has a key policy
+- Unlike other AWS services, KMS should be explicitly told the keys trust the AWS account they are in.
+- The following policy means that the key having the following key policy, will allow AWS account `111122223333` to manage it.
+
+```json
+{
+  "Sid": "Enable IAM policies",
+  "Effect": "Allow",
+  "Principal": { "AWS": "arn:aws:iam::111122223333:root" },
+  "Action": "kms:*",
+  "Resource": "*"
+}
+```
+
+So, in order for IAM to work.
+
+- IAM is trusted by the account
+- The account must be trusted by the key
+- Chain of trust: key - account - IAM - IAM user
+
+IAM Policy gives the holder of the policy the rights to use the key to Encrypt or Decrypt the data.
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": {
+    "Effect": "Allow",
+    "Action": ["kms:Encrypt", "kms:Decrypt"],
+    "Resource": "arn:aws:iam:*:111122223333:key/*"
+  }
+}
+```
+
+Using CMK to encrypt and decrypt data via CLI
+
+```sh
+echo "find all the doggos, distract them with the yumz" > battleplans.txt
+
+aws kms encrypt \
+    --key-id alias/catrobot \
+    --plaintext fileb://battleplans.txt \
+    --output text \
+    --query CiphertextBlob \
+    | base64 --decode not_battleplans.enc
+
+aws kms decrypt \
+    --ciphertext-blob fileb://not_battleplans.enc \
+    --output text \
+    --query Plaintext | base64 --decode decryptedplans.txt
+```
+
+Buckets aren't encrypted, **objects are**. Each object can use a different encryption method.
+
+SSE-C (Server-side encryption with customer provided keys)
+
+- Customer is responsible for the keys management.
+- S3 endpoint performs the encryption of objects.
+- Customer needs to pass the key along with the object(unencrypted) to be encrypted to S3 endpoint.
+- Hash of the key: Once the key and object arrive, it is encrypted. A hash of the key is taken and attached to the object. The hash can identify if the specific key was used to encrypt the object. The key is then discarded after the hash is taken.
+- Post encryption: The key is discarded and is not stored along with the object in S3.
+- For decryption: You need to specify the object to be decrypyted with the key that was used to encrypt the object. If the hash of the key specified in the request matches with the hash attached to the requested object, S3 returns the unencrypted object and discards the key.
+
+SSE-S3 AES256 (Server-side encryption using S3 managed keys)
+
+- S3 is responsible for the keys management. S3 generates master key, when you pick SSE-S3 for the first time. This master key is fully managed and rotated by S3.
+- For encryption: You just provide the object to be encrypted to S3 endpoint. When an object is added, it generates a key specifically for that object. It uses that key to encrypt the given object. The master key is used to encrypt that key used.
+- Post encryption: The original key is discarded. The encrypted key and the encrypted object are stored in S3 post this process.
+
+```
+User or App     ---      S3 Endpoint     ---     S3 Storage
+                              |
+                              |
+                              |
+                              |
+                    Master Key (Handled by S3)
+```
+
+Challenges with using SSE-S3
+
+- Regulatory enviromment where the keys and access needs to be controlled.
+- No way to control key material rotation.
+- No role seperation. A full S3 admin can rotate keys as well as encrypt or decrypt data. (In some domains, these is against the company policy. A clear role seperation on who can manage the keys and who can use the keys needs to be maintained)
+
+SSE-KMS (Server-side encryption using customer master keys stored in AWS KMS)
+
+- S3 generates a customer master key, when you pick SSE-KMS for the first time. Allows control over key rotation
+- For encryption: Everytime an object is uploaded, S3 uses a dedicated key to encrypt the given object. This key is called Data Encryption Key (DEK) and is generated using the Customer Master Key (CMK).
+- S3 endpoint is passed the given object by the request. KMS provides plain text and encrypted Data Encryption Key to be used to encrypt this object.
+- Post encryption: The plain text data encryption key is discarded. The encrypted data encryption key and the encrypted object are stored in S3 post this process.
+- You can also use a customer managed key as well instead of the customer master key from KMS.
+
+```
+User or App     ---      S3 Endpoint     ---     S3 Storage
+                              |
+                              |
+                              |
+                              |
+                  Customer Master Key (In KMS)
+
+```
+
+Advantage of using SSE-KMS:
+
+- To decrypt any object, you need access to the CMK that was used to generate the unique key that was used to generate them.
+- The CMK is used to decrypt the data encryption key for that object. That decrypted data encryption key is used to decrypt the object itself.
+- The best benefit is the role seperation. If you don't have access to KMS, you don't have access to the object.
+
+Enabling Amazon S3 default bucket encryption
+
+- You can set the default encryption behavior on an Amazon S3 bucket so that `all objects are encrypted` when they are stored in the bucket. The objects can be encrypted using server-side encryption with **either Amazon S3-managed keys (SSE-S3) or AWS Key Management Service (AWS KMS) keys**.
+- After you enable default encryption for a bucket, there is no change to the encryption of the objects that existed in the bucket before default encryption was enabled.
+- Any new file uploaded without any encryption specified will use the default bucket encryption.
+
+When you upload objects **after enabling default encryption**:
+
+- If your PUT request headers don't include encryption information, Amazon S3 uses the bucket’s default encryption settings to encrypt the objects.
+- If your PUT request headers include encryption information, Amazon S3 uses the encryption information from the PUT request to encrypt objects before storing them in Amazon S3.
 
 # Encryption
 
