@@ -415,6 +415,10 @@ Permission Evaluation Flow
 | Session Policies     | Any session policy deny?   | DENY  |
 | Identity Policy      | Any identity policy allow? | ALLOW |
 
+Where:
+
+- Permissions Boundary: controls the maximum permissions a user can have.
+
 # KMS
 
 KMS is a Regional and a Public Service. Each region is isolated when using KMS. It's a public service and occupies AWS public zone. It can be connected to by anything with permission in the public zone. (Update) Keys can now be replicated into other regions .
@@ -2386,7 +2390,7 @@ EC2Instance:
 - This allows you to make configuration updates on your running Amazon EC2 instances through the UpdateStack API action.
 - For the change to be applied, cfn-hub calls cfn-init which uses the new configuration.
 
-CloudFormation ChangeSets: Change sets allow you to preview how proposed changes to a stack might impact your running resources, for example, whether your changes will delete or replace any critical resources.
+CloudFormation ChangeSets: Change sets allow you to preview how proposed changes to a stack might impact your running resources, for example, whether your changes will delete or replace any critical resources. AWS CloudFormation makes the changes to your stack only when you decide to execute the change set.
 
 Custom Resources: enable you to write custom provisioning logic in templates that AWS CloudFormation runs anytime you create, update (if you changed the custom resource), or delete stacks.
 
