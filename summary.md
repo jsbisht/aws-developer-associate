@@ -298,6 +298,123 @@ Considerations
 - Uses Elastic IPs (Static IPv4 Public)
 - NAT Gateway only use NACL and dont use Security Group
 
+# Policy Interpretation
+
+For bucket objects under "arn:aws:s3:::holidaygifts/\*"
+
+- Implicit deny (default rule) denies action `s3:DeleteObject`
+- Explicit deny denies actions `s3:GetObject` and `s3:GetObjectAcl` during given time period
+- Explicit approve allows actions `s3:PutObject`, `s3:PutObjectAcl`
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:PutObjectAcl",
+        "s3:GetObject",
+        "s3:GetObjectAcl"
+      ],
+      "Resource": "arn:aws:s3:::holidaygifts/*"
+    },
+    {
+      "Effect": "Deny",
+      "Action": ["s3:GetObject", "s3:GetObjectAcl"],
+      "Resource": "arn:aws:s3:::holidaygifts/*",
+      "Condition": {
+        "DateGreaterThan": { "aws:CurrentTime": "2020-12-01T00:00:00Z" },
+        "DateLessThan": { "aws:CurrentTime": "2020-12-25T06:00:00Z" }
+      }
+    }
+  ]
+}
+```
+
+A way of saying deny all the actions that are not part of the `NotAction` list.
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DenyNonApprovedRegions",
+      "Effect": "Deny",
+      "NotAction": ["cloudfront:*", "iam:*", "route53:*", "support:*"],
+      "Resource": "*",
+      "Condition": {
+        "StringNotEquals": {
+          "aws:RequestedRegion": ["ap-southeast-2", "eu-west-1"]
+        }
+      }
+    }
+  ]
+}
+```
+
+Statement 1:
+
+- Allows to list the buckets, but this alone isnt sufficent to look inside the buckets.
+
+Statement 2:
+
+- Allows the list operation on the top level of bucket `cl-animals4life`, home folder and current username folder under home folder
+
+Statement 3:
+
+- Allows all the operations on the S3 bucket `cl-animals4life` folder that are inside the current username folder under home folder and any object within the username folder.
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["s3:ListAllMyBuckets", "s3:GetBucketLocation"],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::cl-animals4life",
+      "Condition": {
+        "StringLike": {
+          "s3:prefix": ["", "home/", "home/${aws:username}/*"]
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Action": "s3:*",
+      "Resource": [
+        "arn:aws:s3:::cl-animals4life/home/${aws:username}",
+        "arn:aws:s3:::cl-animals4life/home/${aws:username}/*"
+      ]
+    }
+  ]
+}
+```
+
+Cross Account: When access is made from Account A to another Account B containing the resource to be accessed:
+
+| Account A | Account B |         |
+| --------- | --------- | ------- |
+| allowed   | allowed   | granted |
+| allowed   | denied    | denied  |
+| denied    | allowed   | denied  |
+
+Permission Evaluation Flow
+
+| Explicit Deny        | Has explicit deny?         | DENY  |
+| -------------------- | -------------------------- | ----- |
+| SCPs                 | Has any SCP deny?          | DENY  |
+| Resource Policies    | Has resource policy allow? | ALLOW |
+| Permission Boundries | Any boundry deny?          | DENY  |
+| Session Policies     | Any session policy deny?   | DENY  |
+| Identity Policy      | Any identity policy allow? | ALLOW |
+
 # KMS
 
 KMS is a Regional and a Public Service. Each region is isolated when using KMS. It's a public service and occupies AWS public zone. It can be connected to by anything with permission in the public zone. (Update) Keys can now be replicated into other regions .
