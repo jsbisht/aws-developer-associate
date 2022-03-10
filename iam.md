@@ -248,7 +248,7 @@ When adding standard AWS Account, there is invite process that needs to be follo
 But when a AWS Account is created directly under the AWS Organisation, invite is not needed.
 
 - While adding a new account, the IAM role `OrganizationAccountAccessRole` is automatically created _within_ the newly created account.
-- In case adding an existing account, this role needs to be created manually _within_ that account.
+- In case adding an existing account, `OrganizationAccountAccessRole` role needs to be created manually _within_ that account.
 
 ### Creating the role
 
