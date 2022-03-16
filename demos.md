@@ -92,5 +92,13 @@ https://learn.cantrill.io/courses/1101194/lectures/25362691
 
 https://learn.cantrill.io/courses/1101194/lectures/25527525
 
-Management events - charges
-Data events - charges
+Management events (api activity, kms events, starting and stopping ec2, etc) - charges
+Data events (s3 and lambda) - charges
+Insight events (unusual activities) - charges
+
+See the cloudtrail in:
+
+- CloudWatch (Log Group having account id)
+- S3 bucket
+
+Event History (no cloud trail required)

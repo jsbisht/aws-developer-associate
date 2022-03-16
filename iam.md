@@ -6,7 +6,7 @@ There are three ways IAM authenticates a principal:
 
 - User Name/Password
 - Access Key
-- Access Key/Session Token
+- Session Token
 
 IAM allows you to create a password policy enforcing password complexity and expiration.
 
@@ -46,7 +46,7 @@ We cant login to an IAM Group.
 
 ## IAM Role
 
-Unlike an IAM User which is supposed to be used by a single principal, an IAM Role is supposed to be used by many or an unknown number of principles(humans, applications or services) inside or outside your AWS account.
+Unlike an IAM User which is supposed to be used by a single principal, an IAM Role is supposed to be used by many or an unknown number of principles (humans, applications or services) inside or outside your AWS account.
 
 Why cant you use group instead?
 

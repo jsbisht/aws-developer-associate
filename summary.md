@@ -417,7 +417,87 @@ Permission Evaluation Flow
 
 Where:
 
-- Permissions Boundary: controls the maximum permissions a user can have.
+- SCPs: define the maximum permissions for account members of an organization or organizational unit.
+- Resource Policies: Attach inline policies to resources.
+- Permissions Boundary: defines the maximum permissions that the **identity-based policies** can grant to an entity, but does not grant permissions. Also, does not define the maximum permissions that a **resource-based policy** can grant to an entity.
+- Session Policies: Session policies limit permissions that the role or user's identity-based policies grant to the session, but do not grant permissions.
+- Identity Policy: Identity-based policies (managed and inline policies) grant permissions to an identity (users, groups, or roles).
+
+# IAM
+
+Authentication: There are three ways IAM authenticates a principal - User Name/Password, Access Key and Session Token (Created using STS).
+
+- An Access Key is a combination of an access key ID `(20 characters)` and an access secret key `(40 characters)`.
+- When a process operates under an assumed role, the `temporary security token` provides an access key for authentication. In addition to the access key, **the token also includes a session token**.
+
+Authorization is controlled by IAM polices: Customer Managed Policy and AWS Managed Policy.
+
+An IAM user has no permission when its freshly created. Hard Limit of **5000 users** per account. Overcome this using Identity federation and IAM Role.
+
+An IAM Group cant be used for login. Hard Limit of **500 groups** per account. Also, it can be referenced as a principal in a policy.
+
+An IAM Role, unlike an IAM User which is supposed to be used by a single principal, an IAM Role is supposed to be used by many or an unknown number of principles (humans, applications or services) inside or outside your AWS account.
+
+IAM Roles can have two types of policy attached:
+
+- Trust Policy
+- Permissions Policy
+
+Trust Policy: controls which identities can assume this given role. A trust policy can reference different things:
+
+- IAM Users, IAM Role and even AWS Services such as EC2
+- Can refer to policies in other AWS accounts
+- Can even allow anonymous usage of that account
+- Can refer types of identity such as facebook, twitter, etc
+
+Permission Policy: AWS Resouces that are specified within the Permission Policy are allowed to be accessed using the Temporary Security Credentials.
+
+- Every time the Temporary Security Credentials are used, the access is checked against the Permission Policy.
+- Any change in permission policy implies a change in access allowed using the Temporary Security Credentials.
+
+Temporary Security Credentials: If role gets assumed by something that is allowed to assume it, then AWS creates Temporary Security Credentials.
+
+- These credentials are then made available to the identity that assumed that role.
+- Similar to access keys but have an expiry.
+- `sts:AssumeRole` operation is used to assume the role.
+
+Following policy allows only a user named PauloSantos, in AWS account number 111122223333, to assume the role if they have also authenticated with an MFA, are logging in from an IP address in the 203.0.113.0 to 203.0.113.24 CIDR range.
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::111122223333:user/PauloSantos"
+      },
+      "Action": "sts:AssumeRole",
+      "Condition": {
+        "BoolIfExists": {
+          "aws:MultiFactorAuthPresent": "true"
+        },
+        "IpAddress": {
+          "aws:SourceIp": "203.0.113.0/24"
+        }
+      }
+    }
+  ]
+}
+```
+
+Service Control Policies (SCP): SCP is a policy document. It can be attached to An Organisation (The Root Container), One or more Organisational Unit (OU) or A Member Account.
+
+- Though root user can do everything under a given account. You can never restrict a root user. With SCP we are restricting what is allowed under a given account, in effect we are also restricting the root user.
+- SCP inherit down the organisational tree. So, if they are attached to the organisation as a whole, they affect all the accounts within the organisation.
+- If they are attached to an organisational unit, they affect all the organisational units and accounts directly under that organisational unit.
+- If they are attached to member accounts, they affect only those accounts.
+- The Management Account is special and is not affected by the Service Control Policies.
+
+Identity Policies: Things that are both in SCP and Identity policy is allowed.
+
+- Permission only in SCP is allowed but not granted as its not granted by identity policy
+- Permission only in Identity Policy but not in SCP, is not allowed as its beyond whats allowed by SCP
 
 # KMS
 
