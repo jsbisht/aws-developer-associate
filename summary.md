@@ -499,6 +499,12 @@ Identity Policies: Things that are both in SCP and Identity policy is allowed.
 - Permission only in SCP is allowed but not granted as its not granted by identity policy
 - Permission only in Identity Policy but not in SCP, is not allowed as its beyond whats allowed by SCP
 
+Organisation Trail is free for download of the last 90 days data.
+
+- Management Events are free for downloading in every region in each AWS account. Additional copies of these events is charged at $2 per 100,000 events.
+- Data Events are chargeable at $0.10 per 100,000 events irrespective of number of trails.
+- Insights events logs any unusual activity, errors and user behaviour.
+
 # KMS
 
 KMS is a Regional and a Public Service. Each region is isolated when using KMS. It's a public service and occupies AWS public zone. It can be connected to by anything with permission in the public zone. (Update) Keys can now be replicated into other regions .
@@ -1315,6 +1321,62 @@ After attaching the newly created EBS volume to the Linux EC2 instance, Create a
 - After you attach an Amazon EBS volume to your instance, it is exposed as a block device. You can format the volume with any file system and then mount it.
 
 If an EBS volume is the root device of an instance, you must stop the instance before you can detach the volume.
+
+# EFS
+
+EFS is an implementation of NFSv4. EFS Filesystems can be mounted in Linux. EFS can be accessed from on-premises with VPN or Direct Connect so long as access is configured.
+
+- EFS can be shared between many EC2 instances.
+- This is a `private` service, access is via mount targets inside a VPC.
+- EFS is Linux Only.
+- EFS includes POSIX permissions
+
+EFS performance modes:
+
+- General purpose (default for 99.9% of uses)
+- Max I/O performance mode
+
+EFS throughput modes:
+
+- Bursting
+- provisioned
+
+EFS storage classes:
+
+- standard
+- infrequent access
+
+EFS Availability and Durability
+
+- Regional
+- One Zone (multiple but within single AZ)
+
+EFS Encryption
+
+- Use KMS for encryption
+- With KMS based encryption, we need access permission both on the key used and EFS
+
+FSx for Windows Servers: provides a `native windows file system` as a service which can be used within AWS, or from on-premises environments via VPN or Direct Connect. Its not an emulated file system. Its a native windows file system.
+
+- Accessible over `SMB protocol` (standard in windows environment)
+- Integrates with Active Directory (either managed, or self-hosted)
+- Supports Distributed File System (DFS)
+- Uses windows permission model
+- It provides advanced features such as VSS, Data de-duplication, backups. Also, supports encryption at rest and forced encryption in transit.
+
+FSx for Windows Servers Considerations
+
+- FSx uses active directory for its user store, so we start with connecting it to a managed or self-managed AD.
+- The active directory can be within AWS or On-Premise
+- FSx can be deployed in single or multi-az mode.
+- Workspaces (similar to citrix which is a virtual desktop service) when deployed within a VPC, can then use these shared windows file systems.
+- FSx supports volume shadow copies (file level versioning) while connected to Workspaces.
+
+FSx for Lustre: a managed file system which is designed for high performance computing. It delivers extreme performance for scenarios such as `Big Data`, `Machine Learning` and Financial Modeling.
+
+- Deployment Types: Scratch (Short term, Fast and No replication) and Persistent (Long term, High Availability in one AZ and Auto Recovery)
+- You can backup both Deployment types to S3. This can be done automatically or manually. Retension period is 0-35 days
+- With S3 data when accessed is lazy loaded from S3. It is then presisted by FSx for Lustre. Any changes can be updated back to S3 using `hsm_archive` command.
 
 # Database
 
