@@ -33,7 +33,7 @@ Amazon Aurora: Though part of RDS products, but is so different from normal RDS,
 
 ## RDS Database Instance
 
-Runs one of a few types of database engines and can contain multiple user created databases. Create one when you provision the instance, but multiple can be created after.
+Runs one of a few types of database engines and can contain multiple user created databases. Create one database when you provision the instance, but multiple can be created after.
 
 Database connects with a CNAME. RDS uses standard database engines.
 
@@ -81,9 +81,9 @@ If any error occurs with the primary database, AWS detects this and will failove
 
 ....
 
-### Syncronous Replication
+### Synchronous Replication
 
-**Syncronous Replication** is a keyword:
+**Synchronous Replication** is a keyword:
 
 1. Database writes happen
 2. Primary database instance commits changes
@@ -98,7 +98,7 @@ This does not provide fault tolerance - there will be some impact during change
 - The standby replica cannot be accesed directly unless a failure occurs.
 - Failover is highly available, not fault tolerant.
 - Standby replica is in the same region only (other AZ in the VPC).
-- Backups taken from standby (removes performance impacts).
+- Backups are taken from standby (removes performance impacts).
 - Standby replica will be used during AZ outage, primary failure, manual failover, instance type change, and software patching
 
 ---
@@ -168,7 +168,8 @@ Unlike standby replicas the read replicas are used but only for read operations
 ### Asynchronous Replication
 
 - It is written fully to the primary instance. Once its stored on disk, it is then pushed to the replica. This means there could be a small lag.
-- These can be created in the same region or a different region. - This is a **cross region replication**
+- These can be created in the same region or a different region.
+- This is a **cross region replication**
 
 ![img](./imgs/databases/RDS_RR_Architecture.webp)
 
@@ -252,7 +253,7 @@ With KMS based encryption
 - DEKs are loaded in to the hosts as required
 - Database engine perfroms a regular write operation, unaware of any encryption
 - Data is encrypted by the host before sending it to EBS volume
-- Data is decrypted by the host after reading ti from EBS volume
+- Data is decrypted by the host after reading it from EBS volume
 
 ![img](./imgs/databases/RDSEncryption.webp)
 
@@ -268,7 +269,7 @@ With KMS based encryption
 
 RDS IAM Authentication allows to access RDS instance without password
 
-    For this to work, you need to configure RDS instance to allows IAM user authentication
+    For this to work, you need to configure RDS instance to allow IAM user authentication
 
 - `generate-db-auth-token` is used to create the token thats valid for `15 minutes`
 - Policy attached to Users or Roles `maps that IAM identity onto the local RDS user`
@@ -279,7 +280,7 @@ RDS IAM Authentication allows to access RDS instance without password
 
 # Aurora Provisioned
 
-Aurora architecture is VERY different from RDS. At it's heart it uses a **cluster**
+Aurora architecture is VERY different from RDS. At it's heart it uses a **cluster**.
 
 - A single primary instance and 0 or more replicas
 - Unlike other RDS products, replicas within Aurora can be used for reads during normal operation
@@ -296,7 +297,7 @@ Aurora cluster functions across different availability zones.
 
     There is a shared SSD based storage of max 64 TiB. It also has `6 Replicas` in multiple AZs
 
-All instances have access to all of these storage nodes. This replication happens at the storage level. No extra resources are consumed during replication.
+All instances have access to all of these storage nodes. The replication happens at the storage level. No extra resources are consumed during replication.
 
 `By default the primary instance is the only one who can write`. The replicas will have read access.
 
