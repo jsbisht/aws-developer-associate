@@ -1452,15 +1452,63 @@ Restrictions:
 - Bucketname cannot contain periods
 - Must be DNS compatable in the naming
 
+S3 Storage classes comparisons
+
+![img](https://miro.medium.com/max/1400/1*1t8zFevEzNDTf0l8oKp12A.png)
+
+- S3 Standard-IA is approximately 54% cheaper than S3 standard.
+- S3 One Zone-IA is approximately 80% of the base cost of Standard-IA.
+- S3 Glacier costs 1/5 of that of S3 Standard.
+- S3 Glacier Deep Archive is 1/20th the price of S3 Standard. And 1/4th the price of S3 Glacier.
+
+S3 Glacier: 90 days minimum billable storage duration charge. Objects cannot be made publicly available. Types of retrieval:
+
+- Expedited `(1 - 5 minutes, most expensive)`
+- Standard `(3 - 5 hours)`
+- Bulk retreivals `(5 - 12 hours, cheapest)`
+
+S3 Glacier Deep Archive: Designed for long term backups and as a **tape-drive** replacement. Objects cannot be made publicly available. Types of retrieval:
+
+- Standard `(12 hours)`
+- Bulk retreivals `(Upto 48 hours)`
+
+S3 Intelligent-Tiering Tiers:
+
+- Frequent Access (Similar to S3 Standard)
+- Infrequent Access (Similar to S3 Standard-IA)
+- Archive (Similar to S3 Glacier)
+- Deep Archive (Similar to S3 Glacier Deep Archive)
+
+This monitors and automatically moves any object not accessed for 30 days to a low cost infrequent access tier and eventually to archive or deep archive tiers. Cost remains the same as per the tiers stored items are mapped to. Only an additional monitoring and automation fees per 1000 objects is billable. Only move the data to Archive or Deep Archive if the data isnt required on immediate basis. 30 days minimum billable period.
+
+S3 Lifecycle Configuration: Set of rules and these rules consist of actions. Actions can apply to the whole bucket or groups of objects.
+
+Rules scope can limit the scope of the rule using one or more filters or rule applies to all objects in the bucket. Rules cant be based on access pattern. Only Intelligent Tier is used for this use case.
+
+Types of Actions:
+
+- Transistion (Change the storage class of the bucket or objects)
+- Expiration (Delete the items after certain amount of time)
+
+Transitions: Think of lifecycle transitions as `waterfall`. Objects must step down their storage class, they can't step up the storage class.
+
+```
+S3 Standard
+
+    S3 Standard-IA
+
+    S3 Intelligent Tiering
+
+    S3 One Zone-IA
+
+        S3 Glacier
+
+        S3 Glacier Deep Archive
+```
+
 ---
 
 **put-bucket-policy** command can only be used to apply policy at the bucket level, not on objects. You can use S3 Access Control Lists (ACLs) instead to manage permissions of S3 objects.
-
-Glacier Retrival
-
-- Expedited: 1-5 minutes
-- Standard: 3-5 hours
-- Bulk: 5-12 hours
 
 # EBS
 
