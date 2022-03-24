@@ -1506,6 +1506,22 @@ S3 Standard
         S3 Glacier Deep Archive
 ```
 
+S3 Replication: allows objects to be replicated between a SOURCE and DESTINATION buckets in the same or different AWS accounts. Replication is done over SSL.
+
+Two types of replication supported by S3:
+
+- Cross-Region Replication (CRR) is the process used when Source and Destination are in different AWS regions
+- Same-Region Replication (SRR) is used when the buckets are in the same region.
+
+Role based replication: configuration is applied to the SOURCE bucket which specifies DESTINATION bucket to use. IAM role to be used. Role is defined for the S3 bucket to assume it. Role's permission policy gives it permission to read objects on the source object and replicate that to destination bucket.
+
+Source and Destination in same account: They both trust the same AWS account they are in, thus they trust the same IAM role. Here the same role will have access to both source and destination as long as the roles permission policy grants access.
+
+Source and Destination in different account: When replication between different account happens, IAM role configured in source for replication isn't trusted by the destination account.
+
+- In this case, you need to add a bucket policy on the destination bucket to allow the role in source account to replicate objects from destination bucket.
+- Bucket policy in this case is defining that the role in diffent account is allowed to replicate the content from this bucket.
+
 ---
 
 **put-bucket-policy** command can only be used to apply policy at the bucket level, not on objects. You can use S3 Access Control Lists (ACLs) instead to manage permissions of S3 objects.
