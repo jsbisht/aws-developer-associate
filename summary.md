@@ -1515,14 +1515,101 @@ Two types of replication supported by S3:
 
 Role based replication: configuration is applied to the SOURCE bucket which specifies DESTINATION bucket to use. IAM role to be used. Role is defined for the S3 bucket to assume it. Role's permission policy gives it permission to read objects on the source object and replicate that to destination bucket.
 
-Source and Destination in same account: They both trust the same AWS account they are in, thus they trust the same IAM role. Here the same role will have access to both source and destination as long as the roles permission policy grants access.
+Replication with Source and Destination in same account: They both trust the same AWS account they are in, thus they trust the same IAM role. Here the same role will have access to both source and destination as long as the roles permission policy grants access.
 
-Source and Destination in different account: When replication between different account happens, IAM role configured in source for replication isn't trusted by the destination account.
+Replication with Source and Destination in different account: When replication between different account happens, IAM role configured in source for replication isn't trusted by the destination account.
 
 - In this case, you need to add a bucket policy on the destination bucket to allow the role in source account to replicate objects from destination bucket.
 - Bucket policy in this case is defining that the role in diffent account is allowed to replicate the content from this bucket.
 
----
+S3 Replication Considerations
+
+- Objects existing prior to replication being enabled on the source bucket will not be replicated to destination bucket. Only objects added afterwards will be part of replication.
+- **Versioning** should be enabled on both source and destination bucket.
+- **One-way replication** from source to destination. If you add any objects on the destination bucket, they will not be replicated to source bucket.
+- Replication can handle objects that are unencrypted.
+- Replication can also handle objects that are encrypted using SSE-S3 & SSE-KMS (this requires extra config).
+- Replication cannot handle objects that were encrypted using SSE-C, as S3 does not store keys for this encryption.
+- No deletes are replicated by default. Enable `Delete Marker Replication` to replicate deletions.
+
+Ownership: If you create a bucket in an account and you add the objects to it, the same aws account will own those objects. If you grant cross account access to a bucket, its possible that source account will not own some of those objects. Only objects owned by the source account will be replicated.
+
+Limitation: Any changes made by S3 lifecycle management will not be replicated. Cant be used with Glacier or Glacier Deep Archive. Delete markers created by lifecycle rules will not be replicated even with **Delete Marker Replication** enabled.
+
+Signed URLs: When using the URL it matches the current permissions of the identity using it. If the current identity's iam permissions change, the signed URL will also reflect that change. You can create a URL for an object you have no access to. The object will not allow access because your user does not have it. But when the user gets his access, the same URL will be functional.
+
+```
+aws s3 presign <s3-uri>    --expires-in <seconds>
+```
+
+S3 Select and Glacier Select: This provides a ways to retrieve parts of objects and not the entire object. S3 and Glacier select lets you use SQL-like statement. The filtering happens at the S3 bucket source.
+
+CORS configurations are run in order. The first matching configuration is used.
+
+```json
+[
+  {
+    "AllowedHeaders": ["*"],
+    "AllowedMethods": ["PUT", "POST", "DELETE"],
+    "AllowedOrigins": ["http://catagram.io"],
+    "ExposeHeaders": []
+  },
+  {
+    "AllowedHeaders": [],
+    "AllowedMethods": ["GET"],
+    "AllowedOrigins": ["*"],
+    "ExposeHeaders": []
+  }
+]
+```
+
+Types of requests
+
+- Simple Requests `(Some requests don't trigger a CORS preflight. Those are called simple requests)`
+- Preflight and Preflighted requests `(The browser will make a request using the OPTIONS method to the resource on the other origin, in order to determine if the actual request is safe to send)`
+
+S3 Event Notifications: can be delivered to SNS, SQS and Lambda functions. To enable notifications, you must first add a `event notification configuration` that identifies the events you want Amazon S3 to publish and the destinations where you want Amazon S3 to send the notifications. Since events are generated from S3, we must add resource policy on destination(SNS, SQS or Lambda function) to allow S3 service to interact with them. Events include:
+
+- Object created (Put, Post, Copy, CompleteMultiPartUpload)
+- Object delete (Delete, DeleteMarketCreated)
+- Object restore (Post Initiated, Post Completed)
+- Replication (OperationMissedThreshold, OperationReplicatedAfterThreshold, OperationNotTracked, OperationFailedReplication)
+
+The following notification configuration contains a queue configuration identifying an Amazon SQS queue for Amazon S3 to publish events of the `s3:ObjectCreated:Put` type. The events are published whenever an object that has a prefix of `images/` and a `jpg` suffix is PUT to a bucket.
+
+```xml
+<NotificationConfiguration>
+  <QueueConfiguration>
+      <Id>1</Id>
+      <Filter>
+          <S3Key>
+              <FilterRule>
+                  <Name>prefix</Name>
+                  <Value>images/</Value>
+              </FilterRule>
+              <FilterRule>
+                  <Name>suffix</Name>
+                  <Value>jpg</Value>
+              </FilterRule>
+          </S3Key>
+     </Filter>
+     <Queue>arn:aws:sqs:us-west-2:444455556666:s3notificationqueue</Queue>
+     <Event>s3:ObjectCreated:Put</Event>
+  </QueueConfiguration>
+</NotificationConfiguration>
+```
+
+EventBridge: an alternative and supports more types of events and more services. And is a recommended option instead of event notification.
+
+S3 access logging provides detailed records for the requests that are made to a bucket. A target bucket is used to capture the access logs.
+
+In general, bucket owners pay for all Amazon S3 storage and data transfer costs associated with their bucket. With Requester Pays buckets, the requester instead of the bucket owner pays the cost of the request and the data download (Transfer OUT of S3). The bucket owner always pays the cost of storing data.
+
+For Requester Pays to work:
+
+- Unauthenticated requests aren't supported
+- Authenticated identites are required for billing
+- Requesters must add `x-amx-request-payer` header to confirm payment responsibility
 
 **put-bucket-policy** command can only be used to apply policy at the bucket level, not on objects. You can use S3 Access Control Lists (ACLs) instead to manage permissions of S3 objects.
 
