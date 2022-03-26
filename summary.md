@@ -1615,11 +1615,74 @@ For Requester Pays to work:
 
 # EBS
 
+- **Direct** local attached storage - these are physical disks on EC2
+- **Network** attached storage - volumes delivered over the network (EBS)
+- **Ephemeral** storage - temporary storage. Instant store attached to EC2 host
+- **Persistent** storage - permanent storage that lives on past the lifetime of the instance. EBS is persistent storage.
+
+Types of storage
+
+- **Block Storage** - volume presented to the OS as a collection of blocks.
+  - These are mountable and bootable.
+  - You can mount an EBS volume
+  - You can boot off an EBS volume.
+- **File Storage** - Presented as a file share with a structure.
+  - You access the files by traversing the storage.
+  - You cannot boot from storage.
+  - You can mount it.
+- **Object Storage** - It is a flat collection of objects.
+  - An object can be anything with or without attached metadata.
+  - To retrieve the object, you need to provide the key and then the value will be returned.
+  - This is not mountable or bootable.
+  - It scales very well and can have simultanious access.
+
+Storage Performance: Block Size \* IOPS = Throughput
+
+Elastic Block Store (EBS): The OS will create a file system on top of this, NTFS or EXT3 and then it mounts it as a drive or a root volume on Linux. It cannot be connected to two EC2 instances at once. It can be dettached and reattached from one to another. It `can only be attached to EC2 instance in the same AZ`. One EC2 instance can be connected to multiple EBS volumes at once.
+
+Snapshots are copied to S3 Across regions and 3 plus AZ's in a region. You can copy the snapshot to S3 in another region and create the EBS volume from the snapshot in any AZ in that region.
+
+- Snapshots are incrimental, the first being a full backup. And any future snapshots being incremental.
+- Size of snapshot is determined by the data in the volume, not the volume size.
+- Even if a single snapshot is deleted other snapshots or future snapshots will not be impacted. Each snapshot are designed to be self sufficient as in they are not impacted by what happens to other snapshots. [What if you delete the first one?]
+
+While restoring if you attempt to read data that hasn't been restored yet, it will pull it from S3, but this will achieve lower levels of performance than reading from new EBS volume directly.
+
+- You could also use Fast Snapshot Restore (FSR)
+- This immediately restores the data to EBS from S3 snapshot
+- You can create 50 FSR per region
+- FSR costs extra than regular restore
+
+EBS Pricing: Billed based on GB/month (and performance in some cases)
+
+Limitation: With EC2, no matter how many EBS volumes you combine using RAID0, the maximum IOPS is limited to 260,000 (io1/2/BE/gp2/3)
+
+EBS provides at rest encryption for block volumes and snapshots.
+
 After attaching the newly created EBS volume to the Linux EC2 instance, Create a file system on this volume.
 
 - After you attach an Amazon EBS volume to your instance, it is exposed as a block device. You can format the volume with any file system and then mount it.
 
-If an EBS volume is the root device of an instance, you must stop the instance before you can detach the volume.
+Encyption: If an EBS volume is the root device of an instance, you must stop the instance before you can detach the volume. When you set up an EBS volume initially, EBS uses KMS and a Master Key (CMK). The CMK is used by KMS to generate an encrypted data encryption key (DEK) which is stored with the volume with on the physical disk. Every time an EBS volume is mounted to an EC2 instance, the unencrypted DEK is stored in memory of `EC2 Host`. This is used by the `EC2 Host`, to perform encryption and decryption of data from or to the EBS volume. (Key is passed to EC2 Host not the EC2 instance).
+
+- If the user is having data on an encrypted volume and is trying to share it with others, he has to copy the data from the encrypted volume to a new unencrypted volume.
+
+Account Wide Encryption of EBS Volumes: You can enable account wide encryption of EBS Volumes using default Master Key or specify a CMK.
+
+- Any EBS volume created after this setting is enabled will be encrypted using this setting.
+- You can override the key to be used while creating a new EBS volume by choosing a different encryption key.
+- This setting has to be done for each region individually.
+
+EBS Snapshots Encryption: If a snapshot is made of an encrypted EBS volume, it will be an encrypted snapshot always. The same data encryption key is used for that snapshot. Anything made from this snapshot is also encrypted in the same way.
+
+Everytime you create a new EBS volume from scratch, it creates a new data encryption key. While restoring from the snapshot to a new EBS volume, you can choose a different Master Key or keep it same as the snapshot.
+
+Types of EBS Volumes
+
+- General purpose SSD (gp2)
+- Provisioned IOPS SSD (io1)
+- Throughput optimized HDD (st1)
+- Cold HDD (sc1)
 
 # EFS
 

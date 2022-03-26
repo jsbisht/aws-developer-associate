@@ -26,13 +26,11 @@
 
 ### Storage Performance
 
+    Block Size * IOPS = Throughput
+
 - `IO Block Size` - size of the wheels. This determines how to split up the data.
 - `IOPS` - speed of an engine rev (RPM). How many reads or writes a storage system can accomidate in a second.
 - `Throughput` - end speed of the race car. This can be influenced by the network speed for network storage. Expressed in MB/s (megabyte per second).
-
-```
-Block Size \* IOPS = Throughput
-```
 
 ---
 
@@ -107,7 +105,7 @@ When you set up an EBS volume initially, EBS uses KMS and a Master Key (CMK).
 The CMK is used by KMS to generate an encrypted data encryption key (DEK) which is stored with the volume with on the physical disk.
 
 - This key can only be decrypted by KMS (when a role with the proper permissions makes the request)
-- Every time an EBS volume is mounted to an EC2 instance, the unencrypted DEK is stored in memory of `EC2 Host`. This is used by the `EC2 Host`, to perform encryption and decryption of data from or to the EBS volume. (Key is passed to EC2 Host not EC2 instance)
+- Every time an EBS volume is mounted to an EC2 instance, the unencrypted DEK is stored in memory of `EC2 Host`. This is used by the `EC2 Host`, to perform encryption and decryption of data from or to the EBS volume. (Key is passed to EC2 Host not the EC2 instance)
 - When the EC2 instance's host changes, the DEK on EC2 host is discarded.
 - Only the DEK in encrypted form is present on the EBS volume.
 
@@ -153,7 +151,7 @@ If we are required to use a different encryption or make the OS hold the encrypt
 
 - General purpose SSD (gp2)
 - Provisioned IOPS SSD (io1)
-- T-put optimized HDD (st1)
+- Throughput optimized HDD (st1)
 - Cold HDD (sc1)
 
 Each volume has a dominant performance attribute
