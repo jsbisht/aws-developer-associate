@@ -1684,6 +1684,51 @@ Types of EBS Volumes
 - Throughput optimized HDD (st1)
 - Cold HDD (sc1)
 
+EBS - General Purpose SSD (gp2): Volumes can be from 1GB to 16TB. Suitable for low latency workload such as boot volume. **Credit Based** pricing model. Say you are tranferrring a 160KB data, then you will consume 10 IOPS. _1 IOPS is 1 IO in 1 second and 1 IOPS assume 16 KB_. Credits are placed under an IO bucket and has a capacity of 5.4 million IOPS credits which fills at the `baseline performance`. So even if the bucket is filling up with _3 IO credit per second per GB of volume size_, **you can consume more**. One reason for this is that the credit bucket is initialized with 5.4 million IO credits. So, we can run the IO operations at **3000 IOPS for full 30 minutes**.
+
+EBS - General Purpose SSD (gp3)
+
+- 20% percent cheaper than gp2 (base price)
+- 3000 IOPS and 125 MBPS (standard) per volume
+- 16000 IOPS and 1000 MBPS for extra cost per volume
+- 4 times throughput of 1000 MBPS vs 250MBPS of gp2
+
+EBS - Provisioned IOPS SSD (io1): With this IOPS can be adjusted independently of size. Suitable for super high performance and low latency workloads.
+
+It has three class:
+
+- io1
+- io2
+- BlockExpress
+
+Volume Size
+
+- 4GB to 16 TB (io1/io2)
+- 4GB to 64 TB (BlockExpress)
+
+IOPS
+
+- Upto 64,000 IOPS and 1000 MBPS per volume (io1/io2)
+- Upto 256,000 IOPS and 4000 MBPS per volume (BlockExpress)
+
+Size to performance limitation
+
+- 3 IOPS/GB max (gp3)
+- 50 IOPS/GB max (io1)
+- 500 IOPS/GB max (io2)
+- 1000 IOPS/GB max (BlockExpress)
+
+EBS - Hard Disk Based: Suitable when you need to read large blocks of data rather than random access of data. Useful for Big data, data warehouse and log processing. Also, it cannot be a boot volume. Volume Size is between 125 GB to 16 TB (st1/sc1). Similar to gp2, this uses a credit based performance model with a credit bucket. It uses MBPS instead of IOPS though.
+
+- st1
+  - Base (40MBPS/TB)
+  - Burst (250MBPS/TB)
+- sc1
+  - Base (12MBPS/TB)
+  - Burst (80MBPS/TB)
+
+EBS - EC2 Instance Store Volumes: Provides highest storage performance in AWS. They are included in instance price. **They can be attached ONLY at launch**. Cannot be attached later. **An instance store consists of one or more instance store volumes exposed as block devices**.
+
 # EFS
 
 EFS is an implementation of NFSv4. EFS Filesystems can be mounted in Linux. EFS can be accessed from on-premises with VPN or Direct Connect so long as access is configured.
